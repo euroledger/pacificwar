@@ -7,7 +7,7 @@
     "test": "jest",
     "dev": "nodemon --exec ts-node src/main.ts",
     "build": "tsc",
-    "run": "npx ts-node src/main.ts"
+    "start": "npx ts-node src/main.ts"
   },
   "jest": {
     "testMatch": [
