@@ -20,6 +20,12 @@ class ES1AirMissionSchematic extends AirMissionSchematic {
   constructor (options: AirMissionSchematicOptions) {
     super(options)
   }
+
+  public moveMisionAirUnits() {
+    GameStatus.print("\n")
+    GameStatus.print("\t\t\tJapanese Carrier Air Units move from 3159 to 2860 (Oahu)")
+    // no detection in any hexes along route
+  }
 }
 
 // override default battle cycle rules with scenario specific rules here
@@ -65,20 +71,31 @@ class ES1BattleCyle extends DefaultBattleCycle {
   public advantageAirMissionPhase() {
     GameStatus.print("\t\t\tADVANTAGE AIR MISSION PHASE")
     GameStatus.print("\t\t\t===================================")
-    GameStatus.print(
-      '-------------------------------------------------------------------------------------------------'
-    ) 
 
     // decide target hex, origin hex, mission type and air units
 
-    // const missionAirUnits = this.scenario.TaskForces.
+    let missionAirUnits: AirUnit[]
+
+    // get all air units from the two Japanese task forces
+    missionAirUnits = this.scenario.TaskForces[0].AirUnits
+    missionAirUnits = missionAirUnits.concat(this.scenario.TaskForces[1].AirUnits)
+
+
+    GameStatus.print("\t\t\t\tMission Air Units")
+    GameStatus.print("\t\t\t\t-----------------")
+    for (const airUnit of missionAirUnits) {
+      GameStatus.print("\t\t\t\t", airUnit.print())
+    }
+
     const airMissionOptions: AirMissionSchematicOptions = {
       airMissionType: AirMissionType.AirStrike,
-      missionAirUnits: [],
+      missionAirUnits: missionAirUnits,
       startHex: new Hex(3159),
       targetHex: new Hex(2860),
     }
-    // AirMissionSchematic.doAirMission()
+    const airMission = new ES1AirMissionSchematic(airMissionOptions)
+    airMission.doAirMission()
+
   }
 }
 

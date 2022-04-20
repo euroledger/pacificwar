@@ -32,7 +32,7 @@ export abstract class PacificWarScenario {
       GameStatus.print(
         '-------------------------------------------------------------------------------------------------'
       )
-      GameStatus.print("\t\t\t\t\tBATTLE CYCLE 1")
+      GameStatus.print("\t\t\t\tBATTLE CYCLE 1")
       GameStatus.print("\t\t\t=========================")
       this.battleCycle.doSequenceOfPlay()
     }
