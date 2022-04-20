@@ -17,7 +17,7 @@ export const logger: Logger = new Logger({
 
 export class Main {
   private rows: FileRow[] | undefined
-  private mapper: UnitMapper
+  private static mapper: UnitMapper = new UnitMapper()
   private scenario: PacificWarScenario
   private file!: string
   private alliedPlayer!: PlayerContainer
@@ -25,9 +25,12 @@ export class Main {
 
   constructor(scenario: PacificWarScenario) {
     this.scenario = scenario
-    this.mapper = new UnitMapper()
   }
 
+  public get Scenario(): PacificWarScenario {
+    return this.scenario
+  }
+  
   public async load() {
     this.file = `../../resources/${this.scenario.CSVFile}`
     const loader = new DataLoader()
@@ -36,19 +39,19 @@ export class Main {
   }
 
   public mapRowsToUnits(rows: FileRow[]) {
-    this.mapper = new UnitMapper()
-    this.mapper.map(rows)
+    Main.mapper = new UnitMapper()
+    Main.mapper.map(rows)
   }
 
   public async setUpGame() {
     // 2. create player containers
     this.alliedPlayer = new PlayerContainer(
       Side.Allied,
-      this.mapper.getUnitsBySide(Side.Allied)
+      Main.mapper.getUnitsBySide(Side.Allied)
     )
     this.japanesePlayer = new PlayerContainer(
       Side.Japan,
-      this.mapper.getUnitsBySide(Side.Japan)
+      Main.mapper.getUnitsBySide(Side.Japan)
     )
 
     // 3. game initialization (eg set up task forces)
@@ -69,13 +72,14 @@ export class Main {
     }
 
     this.scenario.setUpScenario(this.japanesePlayer, this.alliedPlayer)
+
   }
   public get Rows(): FileRow[] | undefined {
     return this.rows
   }
 
-  public get Mapper(): UnitMapper {
-    return this.mapper
+  public static get Mapper(): UnitMapper {
+    return Main.mapper
   }
 
   public get AlliedPlayerContainer(): PlayerContainer {
@@ -100,6 +104,8 @@ export class Main {
     this.mapRowsToUnits(this.rows)
 
     await this.setUpGame()
+
+    this.scenario.doSequenceOfPlay()
   }
 }
 

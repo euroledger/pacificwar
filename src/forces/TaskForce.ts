@@ -1,4 +1,6 @@
+import { Main } from '../main'
 import { GameStatus } from '../scenarios/GameStatus'
+import { AirUnit } from '../units/AirUnit'
 import { Side } from '../units/Interfaces'
 import { NavalUnit } from '../units/NavalUnit'
 
@@ -133,6 +135,20 @@ export class TaskForce {
     }
   }
 
+  // get all the air units from carriers in the task force
+  public get AirUnits(): AirUnit[] {
+    const allUnits = this.core.concat(this.screen)
+    const airUnits: AirUnit[] = new Array<AirUnit>()
+    for (const unit of allUnits) {
+      if (unit.Id.startsWith('CV')) {
+        // get the Carrier Air Unit for that carrier
+        const carrierAirGroup = Main.Mapper.getUnitById<AirUnit>(this.side, unit.AirGroup)
+        airUnits.push(carrierAirGroup)
+      }
+    }
+    return airUnits
+  }
+
   private illegalCoreUnit(unit: NavalUnit): boolean {
     if (unit.Side === Side.Allied && unit.Id.startsWith('DD')) {
       return true
@@ -204,7 +220,7 @@ export class TaskForce {
   public print() {
     GameStatus.print(`\t\t         ${this.Side} TASK FORCE ${this.taskForceId}`)
     GameStatus.print(
-      '================================================================'
+      '================================================================================================='
     )
     GameStatus.print(`\t\tCORE\t\t\tSCREEN`)
     GameStatus.print(`\t\t----\t\t\t------`)

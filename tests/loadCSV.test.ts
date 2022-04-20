@@ -22,12 +22,12 @@ describe('CSV Load Service Pearl Harbor', () => {
       throw Error('No rows were loaded')
     }
     main.mapRowsToUnits(rows)
-    const allUnits = main.Mapper.Units
+    const allUnits = Main.Mapper.Units
     expect(allUnits.length).toBe(43)
   })
 
   test('Japanese Aircraft Carrier Kaga has correct unit values', async () => {
-    const kaga = main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CV2')
+    const kaga = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CV2')
     expect(kaga.Name).toBe('Kaga')
     expect(kaga.LaunchCapacity).toBe(5)
     expect(kaga.isCapitalShip()).toBe(true)
@@ -45,7 +45,7 @@ describe('CSV Load Service Pearl Harbor', () => {
   })
 
   test('Japanese Battleship Hiei has correct unit values', async () => {
-    const hiei = main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'BB8')
+    const hiei = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'BB8')
     expect(hiei.isCapitalShip()).toBe(true)
     expect(hiei.LaunchCapacity).toBe(NaN)
     expect(hiei.AAStrength).toBe(2)
@@ -62,7 +62,7 @@ describe('CSV Load Service Pearl Harbor', () => {
   })
 
   test('US Battleship Arizona has correct unit values', async () => {
-    const arizona = main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'BB4')
+    const arizona = Main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'BB4')
     expect(arizona.isCapitalShip()).toBe(true)
     expect(arizona.LaunchCapacity).toBe(NaN)
     expect(arizona.AAStrength).toBe(3)
@@ -79,7 +79,7 @@ describe('CSV Load Service Pearl Harbor', () => {
   })
 
   test('US Destroyer Squadron Mahan has correct unit values', async () => {
-    const mahan = main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'DD5')
+    const mahan = Main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'DD5')
     expect(mahan.isCapitalShip()).toBe(false)
     expect(mahan.LaunchCapacity).toBe(NaN)
     expect(mahan.AAStrength).toBe(2)
@@ -96,7 +96,7 @@ describe('CSV Load Service Pearl Harbor', () => {
   })
 
   test('US 2nd MAW has correct unit values', async () => {
-    const maw = main.Mapper.getUnitById<AirUnit>(Side.Allied, '2nd MAW')
+    const maw = Main.Mapper.getUnitById<AirUnit>(Side.Allied, '2nd MAW')
     expect(maw.Range).toBe(8)
     expect(maw.AAStrength).toBe(6)
     expect(maw.AntiNavalStrength).toBe(2)
@@ -109,7 +109,7 @@ describe('CSV Load Service Pearl Harbor', () => {
   })
 
   test('US 5th Bomber Group has correct unit values', async () => {
-    const bg5 = main.Mapper.getUnitById<AirUnit>(Side.Allied, '5th Bomber Group')
+    const bg5 = Main.Mapper.getUnitById<AirUnit>(Side.Allied, '5th Bomber Group')
     expect(bg5.AAStrength).toBe(2)
     expect(bg5.Range).toBe(26)
     expect(bg5.AntiNavalStrength).toBe(1)
@@ -121,7 +121,7 @@ describe('CSV Load Service Pearl Harbor', () => {
   })
 
   test('2nd Patrol Wing has correct unit values', async () => {
-    const bg5 = main.Mapper.getUnitById<AirUnit>(Side.Allied, '2nd Patrol Wing')
+    const bg5 = Main.Mapper.getUnitById<AirUnit>(Side.Allied, '2nd Patrol Wing')
     expect(bg5.AAStrength).toBe(NaN)
     expect(bg5.Range).toBe(16)
     expect(bg5.AircraftType).toBe(AircraftType.LRA)
@@ -134,9 +134,9 @@ describe('CSV Load Service Pearl Harbor', () => {
   })
 
   test('Japanese Aircraft Carrier Shokaku Carrier Air Group has correct unit values', async () => {
-    const shokaku = main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CV5')
+    const shokaku = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CV5')
     expect(shokaku.Name).toBe('Shokaku')
-    const shokakuCAG = main.Mapper.getUnitById<AirUnit>(Side.Japan, shokaku.AirGroup)
+    const shokakuCAG = Main.Mapper.getUnitById<AirUnit>(Side.Japan, shokaku.AirGroup)
     expect(shokakuCAG.AAStrength).toBe(7)
     expect(shokakuCAG.Range).toBe(8)
     expect(shokakuCAG.AntiNavalStrength).toBe(8)
@@ -148,7 +148,7 @@ describe('CSV Load Service Pearl Harbor', () => {
   })
 
   test('2nd Patrol Wing has correct unit values', async () => {
-    const bg5 = main.Mapper.getUnitById<AirUnit>(Side.Allied, '2nd Patrol Wing')
+    const bg5 = Main.Mapper.getUnitById<AirUnit>(Side.Allied, '2nd Patrol Wing')
     expect(bg5.AAStrength).toBe(NaN)
     expect(bg5.Range).toBe(16)
     expect(bg5.AircraftType).toBe(AircraftType.LRA)
@@ -161,14 +161,14 @@ describe('CSV Load Service Pearl Harbor', () => {
   })
 
   test('Pearl Harbor Base Unit has correct values', async () => {
-    const ph = main.Mapper.getUnitById<BaseUnit>(Side.Allied, 'Pearl Harbor')
+    const ph = Main.Mapper.getUnitById<BaseUnit>(Side.Allied, 'Pearl Harbor')
     expect(ph.AAStrength).toBe(3)
     expect(ph.Size).toBe(BaseSize.Large)
     expect(ph.Hex.HexNumber).toBe(2860)
   })
 
   test('US Submarine Unit has correct values', async () => {
-    const sub = main.Mapper.getUnitById<SubmarineUnit>(Side.Allied, 'SubUnit')
+    const sub = Main.Mapper.getUnitById<SubmarineUnit>(Side.Allied, 'SubUnit')
     expect(sub.Steps).toBe(36)
   })
 })

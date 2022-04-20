@@ -10,7 +10,7 @@ import { ActivationStatus, Side } from '../src/units/Interfaces'
 import { NavalUnit } from '../src/units/NavalUnit'
 
 const main = new Main(new ES1())
-describe('Create Task Force', () => {
+describe('Create Task Forces & Force', () => {
   let rows: FileRow[] | undefined
 
   beforeAll(async () => {
@@ -19,17 +19,17 @@ describe('Create Task Force', () => {
     if (!rows) {
       throw Error('No rows were loaded')
     }
-    main.mapRowsToUnits(rows) // can we move this to beforeAll()
+    main.mapRowsToUnits(rows) 
     main.setUpGame()  
   });
 
   test('Create a Japanese Task Force', async () => {
-    const shokaku = main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CV5')
-    const kaga = main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CV2')
-    const tone = main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CA9')
-    const kagero = main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'DD9')
-    const hiei = main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'BB8')
-    const kirishima = main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'BB9')
+    const shokaku = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CV5')
+    const kaga = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CV2')
+    const tone = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CA9')
+    const kagero = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'DD9')
+    const hiei = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'BB8')
+    const kirishima = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'BB9')
 
     const taskForceOptions: TaskForceOptions = {
       side: Side.Japan,
@@ -46,10 +46,10 @@ describe('Create Task Force', () => {
 
   test('Create an Allied Task Force', async () => {
     // create an Allied Task Force with 2 x BB in core; 1 x CA and 1 x DD in screen
-    const mahan = main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'DD5')
-    const nevada = main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'BB1')
-    const tennessee = main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'BB11')
-    const neworleans = main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'CA6')
+    const mahan = Main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'DD5')
+    const nevada = Main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'BB1')
+    const tennessee = Main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'BB11')
+    const neworleans = Main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'CA6')
 
     const taskForceOptions: TaskForceOptions = {
       side: Side.Allied,
@@ -64,6 +64,30 @@ describe('Create Task Force', () => {
     expect(nevada.ActivationStatus).toBe(ActivationStatus.Unactivated)
 
   })
+
+  test('Get the carrier air units from a task force' , async () => {
+    const shokaku = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CV5')
+    const kaga = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CV2')
+    const tone = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CA9')
+    const kagero = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'DD9')
+    const hiei = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'BB8')
+    const kirishima = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'BB9')
+
+    const taskForceOptions: TaskForceOptions = {
+      side: Side.Japan,
+      taskForceId: 1,
+      core: [shokaku, kaga, hiei],
+      screen: [kirishima, tone, kagero],
+    }
+
+    const taskForce = new TaskForce(taskForceOptions)
+
+    const carrierAirUnits = taskForce.AirUnits
+    expect(carrierAirUnits.length).toBe(2)
+    expect(carrierAirUnits[0].Id).toBe('CAD5')
+    expect(carrierAirUnits[1].Id).toBe('CAD2')
+  })
+
   test('Try to create an illegal Task Force', async () => {
     // try to create a task force with:
     // a) a CV in the screen
@@ -74,15 +98,15 @@ describe('Create Task Force', () => {
     // g) too many non-capital ships (>4) in TF
     // h) add a ship to the TF that is already there
 
-    const shokaku = main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CV5')
-    const kaga = main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CV2')
-    const tone = main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CA9')
-    const kagero = main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'DD9')
-    const hiei = main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'BB8')
-    const kirishima = main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'BB9')
-    const akagi = main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CV1')
-    const hiryu = main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CV3')
-    const zuikaku = main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CV6')
+    const shokaku = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CV5')
+    const kaga = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CV2')
+    const tone = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CA9')
+    const kagero = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'DD9')
+    const hiei = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'BB8')
+    const kirishima = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'BB9')
+    const akagi = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CV1')
+    const hiryu = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CV3')
+    const zuikaku = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CV6')
 
 
     const taskForceOptions: TaskForceOptions = {
@@ -136,16 +160,16 @@ describe('Create Task Force', () => {
         new TaskForce(taskForceOptions6)
       }).toThrowError('Cannot add unit BB8 to TF: capital ship limit (6) reached')
 
-      const nevada = main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'BB1')
-      const tennessee = main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'BB11')
-      const california = main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'BB10')
-      const maryland = main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'BB8')
-      const oklahoma = main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'BB3')
-      const brooklyn1 = main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'CL3')
-      const brooklyn2 = main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'CL4')
-      const omaha = main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'CL2')
-      const mahan = main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'DD5')
-      const farragut = main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'DD3')
+      const nevada = Main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'BB1')
+      const tennessee = Main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'BB11')
+      const california = Main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'BB10')
+      const maryland = Main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'BB8')
+      const oklahoma = Main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'BB3')
+      const brooklyn1 = Main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'CL3')
+      const brooklyn2 = Main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'CL4')
+      const omaha = Main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'CL2')
+      const mahan = Main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'DD5')
+      const farragut = Main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'DD3')
       
       const taskForceOptions7: TaskForceOptions = {
         side: Side.Allied,
@@ -196,10 +220,10 @@ describe('Create Task Force', () => {
       hexLocation: 2860
     }
     const oahuBase = new BaseUnit(options)
-    const mahan = main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'DD5')
-    const nevada = main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'BB1')
-    const tennessee = main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'BB11')
-    const neworleans = main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'CA6')
+    const mahan = Main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'DD5')
+    const nevada = Main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'BB1')
+    const tennessee = Main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'BB11')
+    const neworleans = Main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'CA6')
 
     const oahuHex = new Hex(2860)
 

@@ -32,6 +32,10 @@ export class DefaultBattleCycle {
 
     public doSequenceOfPlay() {
         this.lightingPhase()
+        this.advantageDeterminationPhase()
+        this.advantageMovementPhase()
+        this.advantageAirMissionPhase()
+
     }
 
     public set LightingConditionIncrement(increment: number) {
@@ -41,6 +45,18 @@ export class DefaultBattleCycle {
     public lightingPhase() {
         // increment the lighting according to the increment (usually 1)
         LightingConditionDisplay.incrementLightingDisplay(this.lightingConditionIncrement)
+    }
+
+    public advantageDeterminationPhase() {
+      
+    }
+
+    public advantageMovementPhase() {
+
+    }
+
+    public advantageAirMissionPhase() {
+      
     }
 
     public get LightingCondition(): LightingCondition {

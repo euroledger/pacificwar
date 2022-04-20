@@ -1,3 +1,5 @@
+import { DefaultBattleCycle } from "../gamesequence/BattleCycle"
+import { GameStatus } from "./GameStatus"
 import { PlayerContainer } from "./PlayerContainer"
 
 export interface ScenarioOptions {
@@ -14,6 +16,7 @@ export abstract class PacificWarScenario {
     private numberBattleCycles!: number
     protected japanesePlayer!: PlayerContainer
     protected allPlayers!: PlayerContainer
+    protected battleCycle!: DefaultBattleCycle
 
     constructor(options: ScenarioOptions) {
         this.name = options.name
@@ -25,6 +28,15 @@ export abstract class PacificWarScenario {
     // call this after data load with units to be allocated to forces, task forces etc.
     abstract setUpScenario(japanesePlayer: PlayerContainer, alliedPlayer: PlayerContainer):  void
     
+    public doSequenceOfPlay() {
+      GameStatus.print(
+        '-------------------------------------------------------------------------------------------------'
+      )
+      GameStatus.print("\t\t\t\t\tBATTLE CYCLE 1")
+      GameStatus.print("\t\t\t=========================")
+      this.battleCycle.doSequenceOfPlay()
+    }
+
     public get Name() {
         return this.name
     }

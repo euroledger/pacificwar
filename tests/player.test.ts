@@ -14,10 +14,10 @@ describe('Player Containers', () => {
         executor.mapRowsToUnits(executor.Rows)
     })
     test('Player Units', async () => {
-        const alliedPlayer = new PlayerContainer(Side.Allied, executor.Mapper.getUnitsBySide(Side.Allied))
+        const alliedPlayer = new PlayerContainer(Side.Allied, Main.Mapper.getUnitsBySide(Side.Allied))
         expect(alliedPlayer.Units.length).toBe(27)
 
-        const japanesePlayer = new PlayerContainer(Side.Japan, executor.Mapper.getUnitsBySide(Side.Japan))
+        const japanesePlayer = new PlayerContainer(Side.Japan, Main.Mapper.getUnitsBySide(Side.Japan))
         expect(japanesePlayer.Units.length).toBe(16)
     })
   })

@@ -1,4 +1,4 @@
-import { LightingCondition } from '../../displays/LightingConditionDisplay'
+import { LightingCondition, LightingConditionDisplay } from '../../displays/LightingConditionDisplay'
 import { TaskForce, TaskForceOptions } from '../../forces/TaskForce'
 import { DefaultBattleCycle } from '../../gamesequence/BattleCycle'
 import { logger } from '../../main'
@@ -10,14 +10,79 @@ import { NavalUnit } from '../../units/NavalUnit'
 import { Force } from '../../forces/Force'
 import { Hex } from '../Hex'
 import { GameStatus } from '../GameStatus'
+import { AirMissionSchematic, AirMissionSchematicOptions, AirMissionType } from '../../airmissions/AirMissionSchematic'
+import { AirUnit } from '../../units/AirUnit'
+
+// If any of the air mission phases need to be done according to Scenario rules, 
+// then that is done in this sub-class
+class ES1AirMissionSchematic extends AirMissionSchematic {
+
+  constructor (options: AirMissionSchematicOptions) {
+    super(options)
+  }
+}
 
 // override default battle cycle rules with scenario specific rules here
 class ES1BattleCyle extends DefaultBattleCycle {
-  public doLighting() {}
+
+  private scenario: ES1
+
+  constructor(scenario: ES1) {
+    super()
+    this.scenario = scenario
+  }
+
+  public lightingPhase() {
+    GameStatus.print("\t\t\tLIGHTING PHASE")
+    GameStatus.print("\t\t\t=========================")
+    GameStatus.print("\t\t\t\t=> Set Lighting To DAY AM")
+    GameStatus.print(
+      '-------------------------------------------------------------------------------------------------'
+    )
+    LightingConditionDisplay.LightingCondition = LightingCondition.Day_AM
+  }
+
+  public advantageDeterminationPhase() {
+    GameStatus.print("\t\t\tADVANTAGE DETERMINATION PHASE")
+    GameStatus.print("\t\t\t===================================")
+    GameStatus.print("\t\t\t\t=> Set Advantage To Japan")
+    GameStatus.print(
+      '-------------------------------------------------------------------------------------------------'
+    ) 
+    GameStatus.advantage = Side.Japan
+  }
+
+  public advantageMovementPhase() {
+    GameStatus.print("\t\t\tADVANTAGE MOVEMENT PHASE")
+    GameStatus.print("\t\t\t===================================")
+    GameStatus.print("\t\t\t\t=> No movement. Japanese TFs remain at hex 3519")
+    GameStatus.print(
+      '-------------------------------------------------------------------------------------------------'
+    ) 
+    GameStatus.advantage = Side.Japan
+  }
+
+  public advantageAirMissionPhase() {
+    GameStatus.print("\t\t\tADVANTAGE AIR MISSION PHASE")
+    GameStatus.print("\t\t\t===================================")
+    GameStatus.print(
+      '-------------------------------------------------------------------------------------------------'
+    ) 
+
+    // decide target hex, origin hex, mission type and air units
+
+    // const missionAirUnits = this.scenario.TaskForces.
+    const airMissionOptions: AirMissionSchematicOptions = {
+      airMissionType: AirMissionType.AirStrike,
+      missionAirUnits: [],
+      startHex: new Hex(3159),
+      targetHex: new Hex(2860),
+    }
+    // AirMissionSchematic.doAirMission()
+  }
 }
 
 export class ES1 extends PacificWarScenario {
-  private battleCycle!: DefaultBattleCycle
   private taskForces = new Array<TaskForce>()
   private force!: Force
 
@@ -28,7 +93,7 @@ export class ES1 extends PacificWarScenario {
       csvFile: 'es1.csv',
       numberBattleCycles: 2,
     })
-    this.battleCycle = new ES1BattleCyle()
+    this.battleCycle = new ES1BattleCyle(this)
 
     // in this scenario, it is hard-wired to be DAY AM in first battle cycle, DAY_PM second battle cycle
     this.battleCycle.LightingCondition = LightingCondition.Day_AM
@@ -45,16 +110,24 @@ export class ES1 extends PacificWarScenario {
       location: oahuHex,
     }
 
-    const force = new Force(forceOptions)
+    this.force = new Force(forceOptions)
 
     for (const unit of alliedPlayer.Units) {
       // add all units to the same force
-      force.addUnitToForce(unit)
+      this.force.addUnitToForce(unit)
     }
 
     GameStatus.print('\n')
-    force.print()
+    this.force.print()
     GameStatus.print('\n')
+  }
+
+  public get TaskForces(): TaskForce[] {
+    return this.taskForces
+  }
+
+  public get Force(): Force {
+    return this.force
   }
 
   private createJapaneseTaskForces(japanesePlayer: PlayerContainer) {
