@@ -2,9 +2,9 @@ import { FileRow } from '../src/dataload'
 import { Main } from '../src/main'
 import { ES1 } from '../src/scenarios/es1PearlHarbor/es1'
 import { BaseSize } from '../src/units/AbstractUnit'
-import { AircraftType, AirUnit } from '../src/units/AirUnit'
+import { AirUnit } from '../src/units/AirUnit'
 import { BaseUnit } from '../src/units/BaseUnit'
-import { ActivationStatus, Side } from '../src/units/Interfaces'
+import { ActivationStatus, AircraftType, Side } from '../src/units/Interfaces'
 import { NavalUnit, SubmarineUnit } from '../src/units/NavalUnit'
 
 const main = new Main(new ES1())

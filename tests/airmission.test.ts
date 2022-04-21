@@ -22,11 +22,6 @@ describe('Air Mission Schmatic', () => {
     main.setUpGame()  
   });
   test('Air Mission Preliminary Procedure', async () => {
-    const scenario = main.Scenario as ES1
-
-    // move this code into task force or scenario class
-    let availableAirUnits: AirUnit[]
-    const taskForces = scenario.TaskForces
     const akagi = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CV1')
     const kaga = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CV2')
     const hiryu = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CV3')
@@ -50,12 +45,12 @@ describe('Air Mission Schmatic', () => {
   
     const taskForceOptions2: TaskForceOptions = {
       side: Side.Japan,
-      taskForceId: 1,
+      taskForceId: 2,
       core: [soryu, shokaku, zuikaku],
       screen: [hiei, kirishima],
     }
-    const taskForce2 = new TaskForce(taskForceOptions1)
-    const carrierAirUnits2 = taskForce1.AirUnits
+    const taskForce2 = new TaskForce(taskForceOptions2)
+    const carrierAirUnits2 = taskForce2.AirUnits
 
 
     const missionAirUnits = carrierAirUnits1.concat(carrierAirUnits2)
