@@ -1,12 +1,12 @@
 import { AbstractUnit, Type } from './AbstractUnit'
-import { Side } from './Interfaces'
+import { AircraftType, Side } from './Interfaces'
 
-export enum AircraftType {
-  F = 'F',
-  T = 'T', 
-  B = 'B', 
-  LRA = 'LRA'
-}
+// export enum AircraftType {
+//   F = 'F',
+//   T = 'T', 
+//   B = 'B', 
+//   LRA = 'LRA'
+// }
 
 interface AirUnitOptions {
   name: string

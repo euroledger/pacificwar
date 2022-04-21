@@ -25,6 +25,7 @@ export class AirMissionSchematic {
   protected startHex: Hex
   protected targetHex: Hex
   protected coordinated: boolean = false
+  protected detected: boolean = false
 
   constructor(options: AirMissionSchematicOptions) {
     this.missionAirUnits = options.missionAirUnits

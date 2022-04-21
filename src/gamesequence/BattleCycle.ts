@@ -30,11 +30,11 @@ type PhaseHandlerMap = Map<BattleCyclePhase, Function>
 export class DefaultBattleCycle {
     private lightingConditionIncrement: number = 1 // may need to set this to 5 if the first battle cycle moves it to DAY PM
 
-    public doSequenceOfPlay() {
-        this.lightingPhase()
-        this.advantageDeterminationPhase()
-        this.advantageMovementPhase()
-        this.advantageAirMissionPhase()
+    public async doSequenceOfPlay() {
+        await this.lightingPhase()
+        await this.advantageDeterminationPhase()
+        await this.advantageMovementPhase()
+        await this.advantageAirMissionPhase()
 
     }
 
@@ -42,20 +42,20 @@ export class DefaultBattleCycle {
         this.lightingConditionIncrement = increment
     }
 
-    public lightingPhase() {
+    public async lightingPhase() {
         // increment the lighting according to the increment (usually 1)
         LightingConditionDisplay.incrementLightingDisplay(this.lightingConditionIncrement)
     }
 
-    public advantageDeterminationPhase() {
+    public async advantageDeterminationPhase() {
       
     }
 
-    public advantageMovementPhase() {
+    public async advantageMovementPhase() {
 
     }
 
-    public advantageAirMissionPhase() {
+    public async advantageAirMissionPhase() {
       
     }
 

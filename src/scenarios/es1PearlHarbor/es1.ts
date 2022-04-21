@@ -38,7 +38,7 @@ class ES1BattleCyle extends DefaultBattleCycle {
     this.scenario = scenario
   }
 
-  public lightingPhase() {
+  public async lightingPhase() {
     GameStatus.print("\t\t\tLIGHTING PHASE")
     GameStatus.print("\t\t\t=========================")
     GameStatus.print("\t\t\t\t=> Set Lighting To DAY AM")
@@ -46,9 +46,10 @@ class ES1BattleCyle extends DefaultBattleCycle {
       '-------------------------------------------------------------------------------------------------'
     )
     LightingConditionDisplay.LightingCondition = LightingCondition.Day_AM
+    await GameStatus.pause(2500)
   }
 
-  public advantageDeterminationPhase() {
+  public async advantageDeterminationPhase() {
     GameStatus.print("\t\t\tADVANTAGE DETERMINATION PHASE")
     GameStatus.print("\t\t\t===================================")
     GameStatus.print("\t\t\t\t=> Set Advantage To Japan")
@@ -56,9 +57,10 @@ class ES1BattleCyle extends DefaultBattleCycle {
       '-------------------------------------------------------------------------------------------------'
     ) 
     GameStatus.advantage = Side.Japan
+    await GameStatus.pause(2500)
   }
 
-  public advantageMovementPhase() {
+  public async advantageMovementPhase() {
     GameStatus.print("\t\t\tADVANTAGE MOVEMENT PHASE")
     GameStatus.print("\t\t\t===================================")
     GameStatus.print("\t\t\t\t=> No movement. Japanese TFs remain at hex 3519")
@@ -66,9 +68,12 @@ class ES1BattleCyle extends DefaultBattleCycle {
       '-------------------------------------------------------------------------------------------------'
     ) 
     GameStatus.advantage = Side.Japan
+
+    // note second battle cycle -> US can do a search here even if Japanese TFs do not move
+    await GameStatus.pause(2500)
   }
 
-  public advantageAirMissionPhase() {
+  public async advantageAirMissionPhase() {
     GameStatus.print("\t\t\tADVANTAGE AIR MISSION PHASE")
     GameStatus.print("\t\t\t===================================")
 
@@ -86,6 +91,7 @@ class ES1BattleCyle extends DefaultBattleCycle {
     for (const airUnit of missionAirUnits) {
       GameStatus.print("\t\t\t\t", airUnit.print())
     }
+    await GameStatus.pause(2500)
 
     const airMissionOptions: AirMissionSchematicOptions = {
       airMissionType: AirMissionType.AirStrike,
@@ -116,7 +122,7 @@ export class ES1 extends PacificWarScenario {
     this.battleCycle.LightingCondition = LightingCondition.Day_AM
   }
 
-  private createAlliedForce(alliedPlayer: PlayerContainer) {
+  private async createAlliedForce(alliedPlayer: PlayerContainer) {
     // just add all units to the force including the Base marker and set the hex (location)
     const oahuHex = new Hex(2860)
 
@@ -137,6 +143,7 @@ export class ES1 extends PacificWarScenario {
     GameStatus.print('\n')
     this.force.print()
     GameStatus.print('\n')
+    await GameStatus.pause(2500)
   }
 
   public get TaskForces(): TaskForce[] {
@@ -147,7 +154,7 @@ export class ES1 extends PacificWarScenario {
     return this.force
   }
 
-  private createJapaneseTaskForces(japanesePlayer: PlayerContainer) {
+  private async createJapaneseTaskForces(japanesePlayer: PlayerContainer) {
     // creation of two Japanese Task Forces is random subject to the TF rules
     const taskForceOptions: TaskForceOptions = {
       side: Side.Japan,
@@ -207,17 +214,19 @@ export class ES1 extends PacificWarScenario {
       tf.print()
       GameStatus.print('\n')
     }
+    await GameStatus.pause(2500)
   }
 
-  public setUpScenario(
+  public async setUpScenario(
     japanesePlayer: PlayerContainer,
     alliedPlayer: PlayerContainer
-  ): void {
+  ): Promise<void> {
     GameStatus.print('Scenario Set Up -> Create Japanese Task Forces')
-    this.createJapaneseTaskForces(japanesePlayer)
+    await this.createJapaneseTaskForces(japanesePlayer)
 
     GameStatus.print('Scenario Set Up -> Create Allied Force')
-    this.createAlliedForce(alliedPlayer)
+    await this.createAlliedForce(alliedPlayer)
+    await GameStatus.pause(2500)
   }
 
   public get BattleCycle(): DefaultBattleCycle {

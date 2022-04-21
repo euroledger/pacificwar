@@ -14,3 +14,11 @@ export enum ActivationStatus {
   Unactivated = 'Unactivated', 
   Deactivated = 'Deactivated'
 }
+
+export enum AircraftType {
+  F = 'F',
+  T = 'T', 
+  B = 'B', 
+  LRA = 'LRA',
+  Spotter = 'Spotter'
+}

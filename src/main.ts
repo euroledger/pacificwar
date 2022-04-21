@@ -105,7 +105,7 @@ export class Main {
 
     await this.setUpGame()
 
-    this.scenario.doSequenceOfPlay()
+    await this.scenario.doSequenceOfPlay()
   }
 }
 

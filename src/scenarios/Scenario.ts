@@ -28,13 +28,14 @@ export abstract class PacificWarScenario {
     // call this after data load with units to be allocated to forces, task forces etc.
     abstract setUpScenario(japanesePlayer: PlayerContainer, alliedPlayer: PlayerContainer):  void
     
-    public doSequenceOfPlay() {
+    public async doSequenceOfPlay() {
+      await GameStatus.pause(2500)
       GameStatus.print(
         '-------------------------------------------------------------------------------------------------'
       )
       GameStatus.print("\t\t\t\tBATTLE CYCLE 1")
       GameStatus.print("\t\t\t=========================")
-      this.battleCycle.doSequenceOfPlay()
+      await this.battleCycle.doSequenceOfPlay()
     }
 
     public get Name() {

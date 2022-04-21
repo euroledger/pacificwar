@@ -18,4 +18,8 @@ export class GameStatus {
     public static print(message?: any, ...optionalParams: any[]): void {
       console.log(message, ...optionalParams)
     }
+
+    public static async pause(delay: number) {
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
 }
