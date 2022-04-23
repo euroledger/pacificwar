@@ -1,3 +1,4 @@
+import { logger } from '../main'
 import { getDieRoll } from '../utils/Utility'
 
 type IndexType = Array<Array<number>>
@@ -173,6 +174,8 @@ export class AirNavalCombatResultsTable {
         if (dieRoll2 <= 4) {
           indexIntoHits = 1
           if (dieRoll2 === 0) {
+            logger.debug(`second die roll = 0: AirNavalCombatResultsTable.criticalHit = true`)
+
             AirNavalCombatResultsTable.criticalHit = true
           }
           return
@@ -181,11 +184,13 @@ export class AirNavalCombatResultsTable {
       else if (dieRoll >= row[0] && dieRoll <= row[row.length - 1]) {
         indexIntoHits = index
         if (dieRoll === 0) {
+          logger.debug(`die roll = 0: AirNavalCombatResultsTable.criticalHit = true`)
           AirNavalCombatResultsTable.criticalHit = true
         }
         return
       }
     })
+    logger.debug(`indexIntoHits = ${indexIntoHits}`)
     return indexIntoHits
   }
 
@@ -198,6 +203,7 @@ export class AirNavalCombatResultsTable {
         return
       }
     })
+    logger.debug(`critical hits indexIntoHits = ${indexIntoHits}`)
     return indexIntoHits
   }
 

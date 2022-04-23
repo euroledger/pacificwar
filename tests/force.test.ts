@@ -20,7 +20,7 @@ describe('Create Task Forces & Force', () => {
       throw Error('No rows were loaded')
     }
     main.mapRowsToUnits(rows) 
-    main.setUpGame()  
+    await main.setUpGame()  
   });
 
   test('Create a Japanese Task Force', async () => {

@@ -10,6 +10,9 @@ export class GameStatus {
     private static currentPhase: BattleCyclePhase = BattleCyclePhase.Lighting
     public static gameType: GameType = GameType.COMPUTER_ONLY
     public static advantage: Side
+    public static battleCycle: number = 1
+    public static TestMode = false
+    public static numberOfRuns = 1
 
     get CurrentPhase(): BattleCyclePhase {
         return GameStatus.currentPhase
@@ -20,6 +23,6 @@ export class GameStatus {
     }
 
     public static async pause(delay: number) {
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise(resolve => setTimeout(resolve, 0));
     }
 }

@@ -25,8 +25,7 @@ export class LightingConditionDisplay {
 
   public static incrementLightingDisplay(increment: number): void {
     this.lightingConditionIndex =
-      this.lightingConditionIndex + (increment % Object.keys(LightingCondition).length)
-
+      (this.lightingConditionIndex + increment) % Object.values(LightingCondition).length
     if (this.LightingCondition === LightingCondition.Random) {
       this.determineRandomLighting(getDieRoll())
     }
@@ -46,7 +45,7 @@ export class LightingConditionDisplay {
   }
 
   public static set LightingCondition(condition: LightingCondition) {
-    this.lightingConditionIndex = Object.keys(LightingCondition).indexOf(condition)
+    this.lightingConditionIndex = Object.values(LightingCondition).indexOf(condition)
   }
 
   public static get LightingCondition(): LightingCondition {

@@ -14,17 +14,19 @@ import {
   SearchOptions,
   TimeOfDay,
 } from '../src/displays/SearchCharts'
+import { GameStatus } from '../src/scenarios/GameStatus'
 import { AircraftType } from '../src/units/Interfaces'
 
+GameStatus.TestMode = true
 describe('Pacific War Displays', () => {
   test('Lighting Condition Display', async () => {
-    expect(LightingConditionDisplay.LightingCondition).toBe(
-      LightingCondition.Day_PM
-    )
+    const lightingCondition = LightingConditionDisplay.LightingCondition
+
+    expect(lightingCondition).toBe(LightingCondition.Day_AM)
 
     LightingConditionDisplay.incrementLightingDisplay(2)
     expect(LightingConditionDisplay.LightingCondition).toBe(
-      LightingCondition.Night
+      LightingCondition.Day_PM
     )
 
     LightingConditionDisplay.determineRandomLighting(0)
@@ -63,6 +65,15 @@ describe('Pacific War Displays', () => {
       AirNavalCombatType.CapvsCoordinatedMission
     )
     expect(result.hits).toBe(3)
+
+    modifiedStrength = 8
+    dieRoll = 9
+    result = AirNavalCombatResultsTable.getHitsFor(
+      modifiedStrength,
+      dieRoll,
+      AirNavalCombatType.FAirvsNaval
+    )
+    expect(result.hits).toBe(0)
 
     modifiedStrength = 12
     dieRoll = 3

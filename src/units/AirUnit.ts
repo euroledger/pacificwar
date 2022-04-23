@@ -84,6 +84,10 @@ export class AirUnit extends AbstractUnit {
     return this.aircraftLevel
   }
 
+  public get Hits(): number {
+    return 6 - this.steps
+  }
+  
   public print(): string {
     const levelStr = this.AircraftType != AircraftType.LRA ? `-L${this.Level}` : ``
     return `${this.Id} (${this.Steps})${this.AircraftType}${levelStr}`

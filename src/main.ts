@@ -71,7 +71,7 @@ export class Main {
       // todo map choice to this.scenaro
     }
 
-    this.scenario.setUpScenario(this.japanesePlayer, this.alliedPlayer)
+    await this.scenario.setUpScenario(this.japanesePlayer, this.alliedPlayer)
 
   }
   public get Rows(): FileRow[] | undefined {
@@ -105,14 +105,18 @@ export class Main {
 
     await this.setUpGame()
 
-    await this.scenario.doSequenceOfPlay()
+    for (let i= 0; i < GameStatus.numberOfRuns; i++) {
+      if (i % 10 === 0) {
+        console.log("run ", i)
+      }
+      await this.scenario.doSequenceOfPlay()
+    }
+
   }
 }
 
-function onErr(err: any) {
-  GameStatus.print(err)
-  return 1
-}
 // later we dsiplay a menu here and plug in the chosen scenario
 const executor = new Main(new ES1())
 executor.main()
+
+

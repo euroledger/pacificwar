@@ -26,7 +26,7 @@ export abstract class PacificWarScenario {
     }
 
     // call this after data load with units to be allocated to forces, task forces etc.
-    abstract setUpScenario(japanesePlayer: PlayerContainer, alliedPlayer: PlayerContainer):  void
+    abstract setUpScenario(japanesePlayer: PlayerContainer, alliedPlayer: PlayerContainer):  Promise<void>
     
     public async doSequenceOfPlay() {
       await GameStatus.pause(2500)

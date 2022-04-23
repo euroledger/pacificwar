@@ -5,7 +5,10 @@
 import { GameStatus } from '../scenarios/GameStatus'
 import { Hex } from '../scenarios/Hex'
 import { AbstractUnit } from '../units/AbstractUnit'
+import { AirUnit } from '../units/AirUnit'
+import { BaseUnit } from '../units/BaseUnit'
 import { ActivationStatus, Side } from '../units/Interfaces'
+import { NavalUnit } from '../units/NavalUnit'
 
 export interface ForceOptions {
   side: Side
@@ -66,6 +69,10 @@ export class Force {
     return this.units
   }
 
+  public get Location(): Hex {
+    return this.location
+  }
+
   public getActivatedUnits(): AbstractUnit[] {
     return this.units.filter(
       (unit) => unit.ActivationStatus === ActivationStatus.Activated
@@ -88,17 +95,19 @@ export class Force {
     return this.units.find((x) => x.Id === unit.Id) != undefined
   }
 
-  private get AirUnits(): AbstractUnit[] {
-    return this.units.filter((x) => x.isAirUnit() === true)
+  public get AirUnits(): AirUnit[] {
+    return this.units.filter((x) => x.isAirUnit()) as AirUnit[]
   }
 
-  private get NavalUnits(): AbstractUnit[] {
-    return this.units.filter((x) => x.isNavalUnit() === true)
+  public get NavalUnits(): NavalUnit[] {
+    return this.units.filter((x) => x.isNavalUnit()) as NavalUnit[]
   }
 
-  private get BaseUnit(): AbstractUnit[] {
-    return this.units.filter((x) => x.isBaseUnit() === true)
-
+  public get BaseUnit(): BaseUnit | undefined {
+    const base = this.units.filter((x) => x.isBaseUnit()) 
+    if (base.length === 1) {
+      return base[0] as BaseUnit
+    }
   }
 
   public print() {
@@ -106,9 +115,9 @@ export class Force {
     GameStatus.print(
       '================================================================================================='
     )
-    if (this.BaseUnit.length == 1) {
+    if (this.BaseUnit) {
       GameStatus.print('\n')
-      GameStatus.print(`\t\t    BASE UNIT: ${this.BaseUnit[0].print()}`)
+      GameStatus.print(`\t\t    BASE UNIT: ${this.BaseUnit.print()}`)
       GameStatus.print('\n')
     }
     GameStatus.print(`\t\tNAVAL UNITS\t\t\t\tAIR UNITS`)
