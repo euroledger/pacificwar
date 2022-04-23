@@ -4,7 +4,6 @@ import { AirUnit } from '../units/AirUnit'
 import { Side } from '../units/Interfaces'
 import { NavalUnit } from '../units/NavalUnit'
 
-
 const illegalCoreTypes: string[] = ['CVE', 'ST', 'CA', 'CL', 'DE'] // DD can sometimes be allowed ie if it is carrying troops
 
 const illegalScreenTypes: string[] = ['CV', 'CVL', 'CVS']
@@ -153,18 +152,10 @@ export class TaskForce {
     if (unit.Side === Side.Allied && unit.Id.startsWith('DD')) {
       return true
     }
-    if (
-      unit.Side === Side.Japan &&
-      unit.Id.startsWith('DD') &&
-      unit.Loaded === false
-    ) {
+    if (unit.Side === Side.Japan && unit.Id.startsWith('DD') && unit.Loaded === false) {
       return true
     }
-    if (
-      unit.Side === Side.Allied &&
-      unit.Id.startsWith('APD') &&
-      unit.Loaded === false
-    ) {
+    if (unit.Side === Side.Allied && unit.Id.startsWith('APD') && unit.Loaded === false) {
       return true
     }
     if (illegalCoreTypes.find((x) => unit.Id.includes(x))) {
@@ -174,10 +165,7 @@ export class TaskForce {
   }
 
   private unitAlreadyInTF(unit: NavalUnit): boolean {
-    if (
-      this.screen.find((x) => x.Id === unit.Id) ||
-      this.core.find((x) => x.Id === unit.Id)
-    ) {
+    if (this.screen.find((x) => x.Id === unit.Id) || this.core.find((x) => x.Id === unit.Id)) {
       return true
     }
     return false

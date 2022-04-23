@@ -49,7 +49,7 @@ class ES1AirMissionSchematic extends AirMissionSchematic_1.AirMissionSchematic {
     isCoordinated(dieRoll) {
         const ret = super.isCoordinated(dieRoll);
         if (GameStatus_1.GameStatus.battleCycle === 1) {
-            GameStatus_1.GameStatus.print('\t\t\t (redundant in Battle Cycle 1');
+            GameStatus_1.GameStatus.print('\t\t\t (redundant in Battle Cycle 1)');
         }
         return ret;
     }

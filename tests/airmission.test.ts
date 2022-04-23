@@ -20,7 +20,7 @@ import {
   ES1AirMissionSchematic,
 } from '../src/scenarios/es1PearlHarbor/es1'
 import { GameStatus } from '../src/scenarios/GameStatus'
-import { Hex } from '../src/scenarios/Hex'
+import { Hex } from '../src/map/Hex'
 import { BaseSize, Type } from '../src/units/AbstractUnit'
 import { AirUnit } from '../src/units/AirUnit'
 import { BaseUnit } from '../src/units/BaseUnit'
@@ -192,8 +192,6 @@ describe('Air Mission Schmatic', () => {
   })
 
   test('Resolve Air Strike vs Naval Unit', async () => {
-    airMission.strikeStrafeProcedure(airStrikeTargets)
-
     const california = Main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'BB10')
 
     const navalTargets = airStrikeTargets.filter(
@@ -202,18 +200,48 @@ describe('Air Mission Schmatic', () => {
     california.Hits = 0
     const ships = [california]
 
-    console.log('ATTACKER = ', navalTargets[0].Attacker)
+    const cad1 = Main.Mapper.getUnitById<AirUnit>(Side.Japan, 'CAD1') // Kaga air group, anti-naval strength 5
 
     const options: AirStrikeTargetOptions = {
-      attacker: navalTargets[0].Attacker,
+      attacker: cad1,
       combatType: AirNavalCombatType.FAirvsNaval,
       navalTargets: ships,
     }
     const airStrike = new AirStrikeTarget(options)
 
     airMission.FirstAttack = false
-    airMission.resolveAirStrikesvsNaval(airStrike, 5)
+    airMission.resolveAirStrikesvsNaval(airStrike, 5, 0)
 
     expect(california.Hits).toBe(2)
+
+    // test critical hit on first strike
+    california.Hits = 0
+    airMission.FirstAttack = true
+    airMission.resolveAirStrikesvsNaval(airStrike, 0, 9)
+    expect(california.Hits).toBe(14)
+  })
+
+  test('Resolve Strafe vs Unalerted (Grounded) Air Unit', async () => {
+    const pg18 = Main.Mapper.getUnitById<AirUnit>(
+      Side.Allied,
+      '18th Pursuit Group'
+    )
+    pg18.Steps = 6
+
+    const cad1 = Main.Mapper.getUnitById<AirUnit>(Side.Japan, 'CAD1') // anit-air strength is 6 (printed 7 -1 as it has 5 steps)
+
+    const options: AirStrikeTargetOptions = {
+      attacker: cad1,
+      combatType: AirNavalCombatType.FAirvsNaval,
+      airTarget: pg18
+    }
+    const airStrike = new AirStrikeTarget(options)
+
+    airMission.FirstAttack = false
+    airMission.resolveStrafevsUnalertedAir(airStrike, 1)
+
+    expect(pg18.Hits).toBe(6)
+    expect(pg18.Steps).toBe(0)
+    expect(pg18.Eliminated).toBe(true)
   })
 })

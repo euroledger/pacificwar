@@ -111,7 +111,6 @@ export class Main {
       }
       await this.scenario.doSequenceOfPlay()
     }
-
   }
 }
 

@@ -1,5 +1,5 @@
 import { GameStatus } from '../scenarios/GameStatus'
-import { Hex } from '../scenarios/Hex'
+import { Hex } from '../map/Hex'
 import { PacificWarScenario } from '../scenarios/Scenario'
 import { AirUnit } from '../units/AirUnit'
 import { NavalUnit } from '../units/NavalUnit'
@@ -139,7 +139,9 @@ export class AirMissionSchematic {
     // allocate hits evenly across group according to priority
     for (let index = 0; index < hits; index++) {
       const navalUnit = group[index % group.length]
-      navalUnit.Hits += 1
+      if (navalUnit.Sunk === false) {
+        navalUnit.Hits += 1
+      }
     }
 
     for (const navalUnit of group) {

@@ -30,12 +30,20 @@ export abstract class PacificWarScenario {
     
     public async doSequenceOfPlay() {
       await GameStatus.pause(2500)
-      GameStatus.print(
-        '-------------------------------------------------------------------------------------------------'
-      )
-      GameStatus.print("\t\t\t\tBATTLE CYCLE 1")
-      GameStatus.print("\t\t\t=========================")
-      await this.battleCycle.doSequenceOfPlay()
+
+      for (let i = 0; i < this.numberBattleCycles; i++) {
+        GameStatus.battleCycle = i+1
+        GameStatus.print(
+          '-------------------------------------------------------------------------------------------------'
+        )
+        GameStatus.print("\n\t\t")
+        GameStatus.print(`\t\t\t\tBATTLE CYCLE ${GameStatus.battleCycle}`)
+        GameStatus.print("\t\t\t============================")
+        if (i == 0) {
+          await this.battleCycle.doBattleCycleSequenceOfPlay()
+        }
+      }
+     
     }
 
     public get Name() {

@@ -51,7 +51,7 @@ export class NavalUnit extends AbstractUnit {
   private hitCapacity: number = 0
   private canBeCrippled: boolean = false
   private crippled: boolean = false
-  private sunk: boolean = true
+  private sunk: boolean = false
   private shortGunnery!: number
   private mediumGunnery!: number
   private longGunnery!: number

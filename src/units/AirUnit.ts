@@ -1,13 +1,6 @@
 import { AbstractUnit, Type } from './AbstractUnit'
 import { AircraftType, Side } from './Interfaces'
 
-// export enum AircraftType {
-//   F = 'F',
-//   T = 'T', 
-//   B = 'B', 
-//   LRA = 'LRA'
-// }
-
 interface AirUnitOptions {
   name: string
   type: Type
@@ -33,6 +26,7 @@ export class AirUnit extends AbstractUnit {
   private aircraftLevel!: number
   private reverseAA!: number
   private steps!: number
+  private eliminated!: boolean
 
   constructor(options: AirUnitOptions) {
     super(
@@ -84,10 +78,21 @@ export class AirUnit extends AbstractUnit {
     return this.aircraftLevel
   }
 
+  public set Steps(steps: number) {
+    this.steps = Math.max(steps, 0)
+    if (this.steps === 0) {
+      this.eliminated = true
+    }
+  }
+
   public get Hits(): number {
     return 6 - this.steps
   }
-  
+
+  public get Eliminated(): boolean {
+    return this.eliminated
+  }
+
   public print(): string {
     const levelStr = this.AircraftType != AircraftType.LRA ? `-L${this.Level}` : ``
     return `${this.Id} (${this.Steps})${this.AircraftType}${levelStr}`

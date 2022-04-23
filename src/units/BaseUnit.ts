@@ -1,4 +1,4 @@
-import { Hex } from '../scenarios/Hex'
+import { Hex } from '../map/Hex'
 import { AbstractUnit, Type } from './AbstractUnit'
 import { Side } from './Interfaces'
 

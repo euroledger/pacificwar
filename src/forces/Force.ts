@@ -3,7 +3,7 @@
 // hex object will have forces in it as well (two-way references)
 
 import { GameStatus } from '../scenarios/GameStatus'
-import { Hex } from '../scenarios/Hex'
+import { Hex } from '../map/Hex'
 import { AbstractUnit } from '../units/AbstractUnit'
 import { AirUnit } from '../units/AirUnit'
 import { BaseUnit } from '../units/BaseUnit'

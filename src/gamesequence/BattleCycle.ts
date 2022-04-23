@@ -1,41 +1,31 @@
 import { LightingCondition, LightingConditionDisplay } from "../displays/LightingConditionDisplay"
-
-export enum NavalCombatCyclePhase {
-    NavalCombatDetermination, 
-    NavalCombat1, 
-    NavalCombat2, 
-    NavalCombat3
-}
-
-export enum BattleCyclePhase {
-    Lighting,
-    AdvantageDetermination,
-    AdvantageMovement,
-    AdvantageAirMission,
-    NavalCombat, 
-    Bombardment, 
-    Demolition, // not in engagement scenarios
-    GroundCombat,
-    AirfieldRepair, 
-    Rally, 
-    DisadvantageMovement, 
-    DisadvantgeAirMission,
-    JointActivationDeactivation, // not in engagement scenarios
-    DetectionRemoval, 
-    DayMarkerAdjustment // not in engagement scenarios
-}
-
-type PhaseHandlerMap = Map<BattleCyclePhase, Function>
+import { GameStatus } from "../scenarios/GameStatus"
 
 export class DefaultBattleCycle {
-    private lightingConditionIncrement: number = 1 // may need to set this to 5 if the first battle cycle moves it to DAY PM
+    private lightingConditionIncrement: number = 1 
 
-    public async doSequenceOfPlay() {
+    public async doBattleCycleSequenceOfPlay() {
         await this.lightingPhase()
         await this.advantageDeterminationPhase()
         await this.advantageMovementPhase()
         await this.advantageAirMissionPhase()
+        await this.navalCombatCycle()
+        await this.disAdvantageDeterminationPhase()
+        await this.disAdvantageMovementPhase()
+        await this.disAdvantageAirMissionPhase()
+        await this.detectionRemoval()
+        this.endOfCycle()
+        GameStatus.print('\n')
+        GameStatus.print(`\t\t\tEND OF BATTLE CYCLE ${GameStatus.battleCycle}`)
+    }
 
+    public endOfCycle() {
+    }
+    
+    public async detectionRemoval() {
+    }
+    
+    public async navalCombatCycle() {
     }
 
     public set LightingConditionIncrement(increment: number) {
@@ -59,6 +49,17 @@ export class DefaultBattleCycle {
       
     }
 
+    public async disAdvantageDeterminationPhase() {
+      
+    }
+
+    public async disAdvantageMovementPhase() {
+
+    }
+
+    public async disAdvantageAirMissionPhase() {
+      
+    }
     public get LightingCondition(): LightingCondition {
         return LightingConditionDisplay.LightingCondition
     }

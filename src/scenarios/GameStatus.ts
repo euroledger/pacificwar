@@ -1,4 +1,3 @@
-import { BattleCyclePhase } from "../gamesequence/BattleCycle"
 import { Side } from "../units/Interfaces"
  
 export enum GameType {
@@ -7,16 +6,14 @@ export enum GameType {
 }
 
 export class GameStatus {
-    private static currentPhase: BattleCyclePhase = BattleCyclePhase.Lighting
     public static gameType: GameType = GameType.COMPUTER_ONLY
     public static advantage: Side
     public static battleCycle: number = 1
     public static TestMode = false
     public static numberOfRuns = 1
-
-    get CurrentPhase(): BattleCyclePhase {
-        return GameStatus.currentPhase
-    }
+    public static airStepsEliminated: number = 0
+    public static navalUnitHits: number = 0
+    public static navalUnitsSunkOrCrippled: number = 0
 
     public static print(message?: any, ...optionalParams: any[]): void {
       console.log(message, ...optionalParams)
