@@ -53,5 +53,9 @@ describe('Actions on Hex Location: Add Task Forces, Search, Perform Detection Ac
     expect(taskForce2.Screen.length).toEqual(1)
 
     const japaneseTFHex = new Hex(3159)
+    japaneseTFHex.addTaskForceToHex(taskForce1)
+    japaneseTFHex.addTaskForceToHex(taskForce2)
+
+    
   })
 })

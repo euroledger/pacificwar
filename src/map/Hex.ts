@@ -8,6 +8,7 @@ export class Hex {
     private force!: Force
     private taskForces: TaskForce[] = new Array<TaskForce>()
     private hexNumber: number = 0
+    private detected: boolean = false
 
     constructor(hexNumber: number) {
         this.hexNumber = hexNumber
@@ -33,5 +34,11 @@ export class Hex {
       return this.taskForces
     }
 
+    public set Detected(detected: boolean) {
+      this.detected = detected
+    }
 
+    public print(): string {
+      return `Hex: ${this.hexNumber} number of Task Forces present = ${this.taskForces.length}`
+    }
 }
