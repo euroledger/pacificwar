@@ -22,9 +22,9 @@ export interface SearchOptions {
 
 export enum DetectionLevel {
   undetected = 'undetected',
-  detectedGreen = 'detectedGreen',
-  detectedBlue = 'detectedBlue', 
-  detectedRed = 'detectedRed',
+  detectedGreen = 'detected (Green)',
+  detectedBlue = 'detected (Blue)', 
+  detectedRed = 'detected (Red)',
 }
 
 export const SearchResultArray: Array<DetectionLevel> = [
