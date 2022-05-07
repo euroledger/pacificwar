@@ -4,7 +4,6 @@ import { getDieRoll } from '../utils/Utility'
 type IndexType = Array<Array<number>>
 type StrengthDieRollLookUpType = Map<number, IndexType>
 type AirCombatResultsType = Map<AirNavalCombatType, Array<number>>
-type CriticalHitResultType = Map<number, number>
 
 export interface AirCombatResult {
   hits?: number, 

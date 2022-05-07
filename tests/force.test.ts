@@ -7,7 +7,7 @@ import { Hex } from '../src/map/Hex'
 import { Type } from '../src/units/AbstractUnit'
 import { BaseSize, BaseUnit } from '../src/units/BaseUnit'
 import { ActivationStatus, Side } from '../src/units/Interfaces'
-import { NavalUnit } from '../src/units/NavalUnit'
+import { NavalUnit, NavalUnitType } from '../src/units/NavalUnit'
 
 const main = new Main(new ES1())
 describe('Create Task Forces & Force', () => {
@@ -63,6 +63,10 @@ describe('Create Task Forces & Force', () => {
     expect(taskForce.Screen.length).toEqual(2)
     expect(nevada.ActivationStatus).toBe(ActivationStatus.Unactivated)
 
+    const shipTypes = taskForce.getNumberAndTypesOfAllNavalUnits()
+    expect(shipTypes[NavalUnitType.Battleship]).toBe(2)
+    expect(shipTypes[NavalUnitType.Destroyer]).toBe(1)
+    expect(shipTypes[NavalUnitType.HeavyCruiser]).toBe(1)
   })
 
   test('Get the carrier air units from a task force' , async () => {

@@ -3,6 +3,40 @@ import { Side } from './Interfaces'
 
 const CapitalShips: string[] = ['CV', 'CVL', 'CVS', 'BB', 'BC']
 
+const AircaftCarriers: string[] = ['CV', 'CVL', 'CVE']
+
+export enum NavalUnitType {
+  Battleship = 'Battleship',
+  AircraftCarrier = 'Aircraft Carrier',
+  Battlecruiser = 'Battle Cruiser',
+  LightCarrier = 'Light Carrier',
+  SeaplaneCarrier = 'Seaplane Carrier',
+  EscortCarrier = 'Escort Carrier',
+  HeavyCruiser = 'Heavy Cruiser',
+  LightCruiser = 'Light Cruiser',
+  Destroyer = 'Destroyer',
+  DestroyerEscort = 'Destroyer Escort',
+  DestroyerTransort = 'Destroyer Transort',
+  AmphibiousTransport = 'Amphibious Transport',
+  SeaplaneTender = 'Seaplane Tender'
+}
+
+const navalUnitMap: Map<string, NavalUnitType> = new Map([
+  ['BB', NavalUnitType.Battleship],
+  ['BC', NavalUnitType.Battlecruiser],
+  ['CV', NavalUnitType.AircraftCarrier],
+  ['CVE', NavalUnitType.EscortCarrier],
+  ['CVS', NavalUnitType.SeaplaneCarrier],
+  ['CVL', NavalUnitType.LightCarrier],
+  ['CA', NavalUnitType.HeavyCruiser],
+  ['CL', NavalUnitType.LightCruiser],
+  ['DD', NavalUnitType.Destroyer],
+  ['DE', NavalUnitType.DestroyerEscort],
+  ['APD', NavalUnitType.DestroyerTransort],
+  ['AA', NavalUnitType.AmphibiousTransport],
+  ['ST', NavalUnitType.SeaplaneTender]
+])
+
 interface NavalUnitOptions {
   name: string
   type: Type
@@ -61,6 +95,7 @@ export class NavalUnit extends AbstractUnit {
   private airGroup!: string
   private spotterPlane!: string
   private loaded: boolean = false
+  private navalUnitType!: NavalUnitType | undefined
 
   constructor(options: NavalUnitOptions) {
     super(
@@ -85,6 +120,8 @@ export class NavalUnit extends AbstractUnit {
     this.shortTorpedo = options.shortTorpedo
     this.mediumTorpedo = options.mediumTorpedo
     this.spotterPlane = options.spotterPlane
+
+    this.setNavalUnitType(this.id)
   }
 
   print(): string {
@@ -100,15 +137,13 @@ export class NavalUnit extends AbstractUnit {
   }
 
   public isCapitalShip(): boolean {
-    return (
-      CapitalShips.filter((abbreviation) => this.id.startsWith(abbreviation))
-        .length > 0
-    )
+    return (CapitalShips.filter((abbreviation) => this.id.startsWith(abbreviation)).length > 0)
   }
 
   public isCarrier(): boolean {
-    return !(this.AirGroup === undefined || this.AirGroup == '')
+    return (AircaftCarriers.filter((abbreviation) => this.id.startsWith(abbreviation)).length > 0)  
   }
+
   public get HitCapacity(): number {
     return this.hitCapacity
   }
@@ -159,6 +194,24 @@ export class NavalUnit extends AbstractUnit {
 
   public get CanBeCrippled(): boolean {
     return this.canBeCrippled
+  }
+
+  public get NavalUnitType(): NavalUnitType | undefined {
+    return this.navalUnitType
+  }
+
+  public setNavalUnitType(id: string) {
+    let reg = /\d/;
+    let index = id.search(reg);
+    const prefix = id.substring(0, index)
+    
+    if (id.startsWith('CVL')) {
+      this.navalUnitType = NavalUnitType.LightCarrier
+    } else if(id.startsWith('CVS')) {
+      this.navalUnitType = NavalUnitType.SeaplaneCarrier
+    } else {
+      this.navalUnitType = navalUnitMap.get(prefix)
+    }
   }
 
   public setLoaded(loaded: boolean): void {

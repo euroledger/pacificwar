@@ -1,3 +1,4 @@
+import { DetectionLevel } from "../displays/SearchCharts"
 import { Force } from "../forces/Force"
 import { TaskForce } from "../forces/TaskForce"
 
@@ -36,6 +37,12 @@ export class Hex {
 
     public set Detected(detected: boolean) {
       this.detected = detected
+    }
+
+    public determineReconnaisanceForTaskForces(level: DetectionLevel) {
+      // for each task force return the correct level of reconnaisance for the given detection level
+      for (const taskForce of this.taskForces) {}
+      
     }
 
     public print(): string {

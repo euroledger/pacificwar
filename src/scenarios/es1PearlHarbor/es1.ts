@@ -1,8 +1,5 @@
-import {
-  LightingCondition,
-  LightingConditionDisplay,
-} from '../../displays/LightingConditionDisplay'
-import { TaskForce, TaskForceOptions } from '../../forces/TaskForce'
+import { LightingCondition, LightingConditionDisplay } from '../../displays/LightingConditionDisplay'
+import { ReconInformation, TaskForce, TaskForceOptions } from '../../forces/TaskForce'
 import { DefaultBattleCycle } from '../../gamesequence/BattleCycle'
 import { logger } from '../../main'
 import { PlayerContainer } from '../PlayerContainer'
@@ -13,28 +10,12 @@ import { NavalUnit } from '../../units/NavalUnit'
 import { Force } from '../../forces/Force'
 import { Hex } from '../../map/Hex'
 import { GameStatus } from '../GameStatus'
-import {
-  AirMissionSchematic,
-  AirMissionSchematicOptions,
-  AirMissionType,
-} from '../../airmissions/AirMissionSchematic'
+import { AirMissionSchematic, AirMissionSchematicOptions, AirMissionType } from '../../airmissions/AirMissionSchematic'
 import { AirUnit } from '../../units/AirUnit'
 import { AirStrikeTarget } from '../../airmissions/AirStrikeTarget'
-import {
-  AirNavalCombatResultsTable,
-  AirNavalCombatType,
-} from '../../displays/AirNavalCombatResultsTable'
-import {
-  minNumberOfAirUnitTargets,
-  maxNumberOfAirUnitTargets,
-  numBattleshipsPerTargetGroup,
-} from './es1Config'
-import {
-  DetectionLevel,
-  SearchChart,
-  SearchOptions,
-  TimeOfDay,
-} from '../../displays/SearchCharts'
+import { AirNavalCombatResultsTable, AirNavalCombatType } from '../../displays/AirNavalCombatResultsTable'
+import { minNumberOfAirUnitTargets, maxNumberOfAirUnitTargets, numBattleshipsPerTargetGroup } from './es1Config'
+import { DetectionLevel, SearchChart, SearchOptions, TimeOfDay } from '../../displays/SearchCharts'
 import { alliedSearchChartResults as alliedNavalSearchChartResults } from '../../../src/displays/AlliedSearchTables'
 
 // If any of the air mission phases need to be done according to Scenario rules,
@@ -47,9 +28,7 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
 
   public async moveMisionAirUnits() {
     GameStatus.print('\n')
-    GameStatus.print(
-      '\t\t\tJapanese Carrier Air Units move from 3159 to 2860 (Oahu)'
-    )
+    GameStatus.print('\t\t\tJapanese Carrier Air Units move from 3159 to 2860 (Oahu)')
     // no detection in any hexes along route
   }
 
@@ -81,14 +60,10 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
 
     const numForces: number = force === undefined ? 0 : 1
     const plural: string = numForces === 1 ? '' : 's'
-    GameStatus.print(
-      `\t\t\tTarget Hex contains ${numForces} force${plural}, and ${taskForces.length} task forces`
-    )
+    GameStatus.print(`\t\t\tTarget Hex contains ${numForces} force${plural}, and ${taskForces.length} task forces`)
     GameStatus.print(`\t\t\t\t => Target is Force`)
 
-    const battleshipsAtTarget = force.NavalUnits.filter((unit) =>
-      unit.Id.startsWith('BB')
-    )
+    const battleshipsAtTarget = force.NavalUnits.filter((unit) => unit.Id.startsWith('BB'))
     const airStrikeTargets: AirStrikeTarget[] = this.allocateStrikeTargets(
       this.missionAirUnits,
       force.AirUnits,
@@ -115,10 +90,7 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
   ): AirStrikeTarget[] {
     // allocate 1, 2 or 3 units to attack US air
     // 3, 4 or 5 remaining steps attack BBs
-    const numAirUnitsAttackingAir = random(
-      minNumberOfAirUnitTargets,
-      maxNumberOfAirUnitTargets
-    )
+    const numAirUnitsAttackingAir = random(minNumberOfAirUnitTargets, maxNumberOfAirUnitTargets)
 
     // sort air targets into order of priority based on number of steps
     airUnitsAtTarget.sort((a, b) => b.Steps - a.Steps)
@@ -139,14 +111,12 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
         new AirStrikeTarget({
           attacker: unit,
           combatType: AirNavalCombatType.AirvsUnalertedAir,
-          airTarget: targetAirUnits[index++],
+          airTarget: targetAirUnits[index++]
         })
       )
     }
 
-    const airUnitsAttackingNaval = missionAirUnits.filter(
-      (el) => !airUnitsAttackingAir.includes(el)
-    )
+    const airUnitsAttackingNaval = missionAirUnits.filter((el) => !airUnitsAttackingAir.includes(el))
 
     // Select 6 battleships to target then allocate attacking units amongst these
     // as per victory conditions (need to get 4 hits on 6 battleships)
@@ -158,12 +128,8 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
     // next air unit will target those same 6 ships but in reverse to spread hits evenly
     GameStatus.print('\n')
 
-    GameStatus.print(
-      `\t\t\t\t => ${airUnitsAttackingNaval.length} air units attacking 6 battleships each`
-    )
-    GameStatus.print(
-      `\t\t\t\t => ${airUnitsAttackingAir.length} air units attacking unalerted air units`
-    )
+    GameStatus.print(`\t\t\t\t => ${airUnitsAttackingNaval.length} air units attacking 6 battleships each`)
+    GameStatus.print(`\t\t\t\t => ${airUnitsAttackingAir.length} air units attacking unalerted air units`)
 
     const reverseArray = [...targetBattleships].reverse()
 
@@ -173,7 +139,7 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
         new AirStrikeTarget({
           attacker: unit,
           combatType: AirNavalCombatType.FAirvsNaval,
-          navalTargets: odd ? targetBattleships : reverseArray,
+          navalTargets: odd ? targetBattleships : reverseArray
         })
       )
       odd = !odd
@@ -199,8 +165,7 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
     // of a critical hit (critical hits do not apply to air units)
 
     const airUnitTargets = airStrikeTargets.filter(
-      (target) =>
-        target.AirNavalCombatType === AirNavalCombatType.AirvsUnalertedAir
+      (target) => target.AirNavalCombatType === AirNavalCombatType.AirvsUnalertedAir
     )
     const navalUnitTargets = airStrikeTargets.filter(
       (target) => target.AirNavalCombatType === AirNavalCombatType.FAirvsNaval
@@ -234,14 +199,8 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
     this.firstAttack = first
   }
 
-  public resolveAirStrikesvsNaval(
-    airStrike: AirStrikeTarget,
-    unmodifiedDieRoll: number,
-    secondRoll?: number
-  ) {
-    GameStatus.print(
-      `\t\t\tAir Unit ${airStrike.Attacker.print()} attacking (in order of priority):`
-    )
+  public resolveAirStrikesvsNaval(airStrike: AirStrikeTarget, unmodifiedDieRoll: number, secondRoll?: number) {
+    GameStatus.print(`\t\t\tAir Unit ${airStrike.Attacker.print()} attacking (in order of priority):`)
     let priority = 1
     for (const ship of airStrike.NavalTargets) {
       GameStatus.print(`\t\t\t\t${priority++} ${ship.print()}`)
@@ -259,15 +218,10 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
     this.firstAttack = false
     GameStatus.print(`\t\t\t\t\t=> using row ${airStrike.AirNavalCombatType}`)
 
-    GameStatus.print(
-      `\t\t\t\t\t=> Die Roll is ${unmodifiedDieRoll}${modifierStr}`
-    )
+    GameStatus.print(`\t\t\t\t\t=> Die Roll is ${unmodifiedDieRoll}${modifierStr}`)
 
-    const attackerModifiedStrength =
-      airStrike.Attacker.AntiNavalStrength - airStrike.Attacker.Hits
-    GameStatus.print(
-      `\t\t\t\t\t=> Attacker Anti-Naval Strength is ${attackerModifiedStrength}`
-    )
+    const attackerModifiedStrength = airStrike.Attacker.AntiNavalStrength - airStrike.Attacker.Hits
+    GameStatus.print(`\t\t\t\t\t=> Attacker Anti-Naval Strength is ${attackerModifiedStrength}`)
     let result = AirNavalCombatResultsTable.getHitsFor(
       attackerModifiedStrength,
       modifiedDieRoll,
@@ -280,8 +234,7 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
     let hits = result.hits
     if (modifiedDieRoll == 0) {
       let secondDieRoll = secondRoll ? secondRoll : getDieRoll()
-      const criticalHitsDieRoll =
-        AirNavalCombatResultsTable.getCriticalHits(secondDieRoll)
+      const criticalHitsDieRoll = AirNavalCombatResultsTable.getCriticalHits(secondDieRoll)
       hits += criticalHitsDieRoll
       GameStatus.print(
         `\t\t\t\t\t=> Critical Hit Die Roll = ${secondDieRoll}, Number Extra Hits = ${criticalHitsDieRoll}`
@@ -290,19 +243,14 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
     }
     if (GameStatus.battleCycle === 1) {
       hits *= 2
-      GameStatus.print(
-        `\t\t\t\t\t=> First Battle Cycle hits doubled, Final Num Hits = ${hits}`
-      )
+      GameStatus.print(`\t\t\t\t\t=> First Battle Cycle hits doubled, Final Num Hits = ${hits}`)
     }
     GameStatus.print(`\n`)
     this.distributeHits(airStrike.NavalTargets, hits)
     GameStatus.print(`\n`)
   }
 
-  public resolveStrafevsUnalertedAir(
-    airStrike: AirStrikeTarget,
-    unmodifiedDieRoll: number
-  ) {
+  public resolveStrafevsUnalertedAir(airStrike: AirStrikeTarget, unmodifiedDieRoll: number) {
     let modifiedDieRoll = unmodifiedDieRoll
     let modifierStr = ''
 
@@ -316,15 +264,10 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
     this.firstAttack = false
     GameStatus.print(`\t\t\t\t=> using row ${airStrike.AirNavalCombatType}`)
 
-    GameStatus.print(
-      `\t\t\t\t=> Die Roll is ${unmodifiedDieRoll}${modifierStr}`
-    )
+    GameStatus.print(`\t\t\t\t=> Die Roll is ${unmodifiedDieRoll}${modifierStr}`)
 
-    const attackerModifiedStrength =
-      airStrike.Attacker.AAStrength - airStrike.Attacker.Hits
-    GameStatus.print(
-      `\t\t\t\t=> Attacker Anti-Air Strength is ${attackerModifiedStrength}`
-    )
+    const attackerModifiedStrength = airStrike.Attacker.AAStrength - airStrike.Attacker.Hits
+    GameStatus.print(`\t\t\t\t=> Attacker Anti-Air Strength is ${attackerModifiedStrength}`)
 
     let result = AirNavalCombatResultsTable.getHitsFor(
       attackerModifiedStrength,
@@ -343,18 +286,14 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
 
     if (GameStatus.battleCycle === 1) {
       hits *= 2
-      GameStatus.print(
-        `\t\t\t\t=> First Battle Cycle hits doubled, Final Num Hits = ${hits}`
-      )
+      GameStatus.print(`\t\t\t\t=> First Battle Cycle hits doubled, Final Num Hits = ${hits}`)
     }
     const stepsAtStart = airStrike.AirTarget.Steps
     airStrike.AirTarget.Steps -= hits // reduce the air unit's steps by hits (min 0)
 
     const pluralStr = airStrike.AirTarget.Steps === 1 ? '' : 's'
 
-    GameStatus.print(
-      `\t\t\t\t\t=> ${airStrike.AirTarget.Id} now has ${airStrike.AirTarget.Steps} step${pluralStr}`
-    )
+    GameStatus.print(`\t\t\t\t\t=> ${airStrike.AirTarget.Id} now has ${airStrike.AirTarget.Steps} step${pluralStr}`)
     if (airStrike.AirTarget.Eliminated) {
       GameStatus.print(`\t\t\t\t\t\t=> Air Unit ELIMINATED!`)
     }
@@ -391,9 +330,7 @@ class ES1BattleCyle extends DefaultBattleCycle {
       shipStr += `\n\t\t\t\t\t => ${ship.print()} (${hitStr})`
     }
     GameStatus.print(`\t\t\t\tBattleships with 4 or more hits: ${shipStr}`)
-    GameStatus.print(
-      `\t\t\t\tAir Steps Eliminated: ${GameStatus.airStepsEliminated}`
-    )
+    GameStatus.print(`\t\t\t\tAir Steps Eliminated: ${GameStatus.airStepsEliminated}`)
 
     GameStatus.print(
       '-------------------------------------------------------------------------------------------------'
@@ -407,9 +344,7 @@ class ES1BattleCyle extends DefaultBattleCycle {
     }
     GameStatus.print('\t\t\tLIGHTING PHASE')
     GameStatus.print('\t\t\t=========================')
-    GameStatus.print(
-      `\t\t\t\t=> Set Lighting To ${LightingConditionDisplay.LightingCondition}`
-    )
+    GameStatus.print(`\t\t\t\t=> Set Lighting To ${LightingConditionDisplay.LightingCondition}`)
     GameStatus.print(
       '-------------------------------------------------------------------------------------------------'
     )
@@ -430,12 +365,8 @@ class ES1BattleCyle extends DefaultBattleCycle {
   public async advantageMovementPhase() {
     GameStatus.print('\t\t\tADVANTAGE MOVEMENT PHASE')
     GameStatus.print('\t\t\t===================================')
-    GameStatus.print(
-      '\t\t\t\t=> No Naval movement. Japanese TFs remain at hex 3519'
-    )
-    GameStatus.print(
-      '\t\t\t\t=> US conducts search for TFs in hex 3591 with LRA unit'
-    )
+    GameStatus.print('\t\t\t\t=> No Naval movement. Japanese TFs remain at hex 3519')
+    GameStatus.print('\t\t\t\t=> US conducts search for TFs in hex 3591 with LRA unit')
     GameStatus.advantage = Side.Japan
 
     if (GameStatus.battleCycle === 1) {
@@ -448,7 +379,7 @@ class ES1BattleCyle extends DefaultBattleCycle {
 
     // +1 DRM because two TFs in hex...TODO check the hex and work this out
 
-    // for now just pass in the +1 as the DRM 
+    // for now just pass in the +1 as the DRM
 
     const dieRoll = getDieRoll()
     let options: SearchOptions = {
@@ -457,24 +388,31 @@ class ES1BattleCyle extends DefaultBattleCycle {
       dieRoll,
       searchingAirUnitType: AircraftType.LRA,
       timeOfDay: TimeOfDay.Day,
-      DRM: 1,
+      DRM: -1
     }
 
     let result: DetectionLevel = SearchChart.searchForNaval(options)
-    GameStatus.print(
-      `\t\t\t\t=> Search Die Roll = ${dieRoll}, result = ${result}`
-    )
+    GameStatus.print(`\t\t\t\t=> Search Die Roll = ${dieRoll}, result = ${result}`)
 
     const detected: boolean = result != DetectionLevel.undetected
-    GameStatus.print(
-      `\t\t\t\t=> Detected = ${detected}`
-    )
+    GameStatus.print(`\t\t\t\t=> Detected = ${detected}`)
 
     if (detected) {
-      // TODO
-      // give the correct detection information for the given detection level
-
+      // print the correct detection information for the given detection level
       const hex = this.scenario.JapaneseTaskForceHex
+
+      for (const taskForce of hex.TaskForces) {
+        if (result === DetectionLevel.detectedRed) {
+          taskForce.printRedReconInfo("" + taskForce.TaskForceId)
+        }
+        else if (result === DetectionLevel.detectedGreen) {
+          taskForce.printGreenReconInfo("" + taskForce.TaskForceId)
+        }
+        else if (result === DetectionLevel.detectedBlue) {
+          taskForce.printBlueReconInfo("" + taskForce.TaskForceId)
+        }
+      }
+
       hex.Detected = true
     }
 
@@ -499,9 +437,7 @@ class ES1BattleCyle extends DefaultBattleCycle {
 
     // get all air units from the two Japanese task forces
     missionAirUnits = this.scenario.TaskForces[0].AirUnits
-    missionAirUnits = missionAirUnits.concat(
-      this.scenario.TaskForces[1].AirUnits
-    )
+    missionAirUnits = missionAirUnits.concat(this.scenario.TaskForces[1].AirUnits)
 
     GameStatus.print('\t\t\t\tMission Air Units')
     GameStatus.print('\t\t\t\t-----------------')
@@ -516,7 +452,7 @@ class ES1BattleCyle extends DefaultBattleCycle {
       airMissionType: AirMissionType.AirStrike,
       missionAirUnits: missionAirUnits,
       startHex: new Hex(3159),
-      targetHex: targetHex,
+      targetHex: targetHex
     }
     const airMission = new ES1AirMissionSchematic(airMissionOptions)
     await airMission.doAirMission()
@@ -525,10 +461,7 @@ class ES1BattleCyle extends DefaultBattleCycle {
     ES1.battleshipsWith4HitsOrMore = this.scenario.Force.NavalUnits.filter(
       (unit) => unit.Id.startsWith('BB') && unit.Hits >= 4
     )
-    GameStatus.navalUnitHits = this.scenario.Force.NavalUnits.reduce(
-      (accum, item) => accum + item.Hits,
-      0
-    )
+    GameStatus.navalUnitHits = this.scenario.Force.NavalUnits.reduce((accum, item) => accum + item.Hits, 0)
   }
   public async disAdvantageMovementPhase() {
     GameStatus.print('\t\t\tDISADVANTAGE MOVEMENT PHASE')
@@ -561,7 +494,7 @@ export class ES1 extends PacificWarScenario {
       name: 'Engagement Scenario 1 Pearl Harbor',
       number: 1,
       csvFile: 'es1.csv',
-      numberBattleCycles: 2,
+      numberBattleCycles: 2
     })
     this.battleCycle = new ES1BattleCyle(this)
 
@@ -577,7 +510,7 @@ export class ES1 extends PacificWarScenario {
       side: Side.Allied,
       forceId: 1,
       units: [],
-      location: this.oahuHex,
+      location: this.oahuHex
     }
 
     this.force = new Force(forceOptions)
@@ -613,7 +546,7 @@ export class ES1 extends PacificWarScenario {
       side: Side.Japan,
       taskForceId: 1,
       core: [],
-      screen: [],
+      screen: []
     }
     const tf1 = new TaskForce(taskForceOptions)
     this.japaneseTFHex.addTaskForceToHex(tf1)
@@ -631,22 +564,16 @@ export class ES1 extends PacificWarScenario {
       const tf = random(0, 1)
 
       if (unit.Id.startsWith('CV')) {
-        logger.debug(
-          `Adding ${unit.Id}-${unit.Name} to task force ${tf + 1} (CORE)`
-        )
+        logger.debug(`Adding ${unit.Id}-${unit.Name} to task force ${tf + 1} (CORE)`)
         this.taskForces[tf].addUnitToCore(unit as NavalUnit)
       } else if (unit.isNavalUnit()) {
-        logger.debug(
-          `Adding ${unit.Id}-${unit.Name} to task force ${tf + 1} (SCREEN)`
-        )
+        logger.debug(`Adding ${unit.Id}-${unit.Name} to task force ${tf + 1} (SCREEN)`)
         try {
           this.taskForces[tf].addUnitToScreen(unit as NavalUnit)
         } catch (Error) {
           // tried to add to screen of one task force - add to other Instead
           logger.debug(
-            `Error adding ${unit.Id} to task force ${
-              tf + 1
-            } -> add to task force ${((tf + 1) % 2) + 1} instead`
+            `Error adding ${unit.Id} to task force ${tf + 1} -> add to task force ${((tf + 1) % 2) + 1} instead`
           )
           try {
             this.taskForces[(tf + 1) % 2].addUnitToScreen(unit as NavalUnit)
@@ -674,10 +601,7 @@ export class ES1 extends PacificWarScenario {
     await GameStatus.pause(2500)
   }
 
-  public async setUpScenario(
-    japanesePlayer: PlayerContainer,
-    alliedPlayer: PlayerContainer
-  ): Promise<void> {
+  public async setUpScenario(japanesePlayer: PlayerContainer, alliedPlayer: PlayerContainer): Promise<void> {
     GameStatus.print('Scenario Set Up -> Create Japanese Task Forces')
     await this.createJapaneseTaskForces(japanesePlayer)
 

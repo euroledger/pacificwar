@@ -5,7 +5,7 @@ import { BaseSize } from '../src/units/AbstractUnit'
 import { AirUnit } from '../src/units/AirUnit'
 import { BaseUnit } from '../src/units/BaseUnit'
 import { ActivationStatus, AircraftType, Side } from '../src/units/Interfaces'
-import { NavalUnit, SubmarineUnit } from '../src/units/NavalUnit'
+import { NavalUnit, NavalUnitType, SubmarineUnit } from '../src/units/NavalUnit'
 
 const main = new Main(new ES1())
 describe('CSV Load Service Pearl Harbor', () => {
@@ -42,6 +42,7 @@ describe('CSV Load Service Pearl Harbor', () => {
     expect(kaga.isCarrier()).toBe(true)
     expect(kaga.hasSpotterPlane()).toBe(false)
     expect(kaga.isNavalUnit()).toBe(true)
+    expect(kaga.NavalUnitType).toBe(NavalUnitType.AircraftCarrier)
   })
 
   test('Japanese Battleship Hiei has correct unit values', async () => {
@@ -58,6 +59,7 @@ describe('CSV Load Service Pearl Harbor', () => {
     expect(hiei.BombardStrength).toBe(4)
     expect(hiei.isCarrier()).toBe(false)
     expect(hiei.hasSpotterPlane()).toBe(true)
+    expect(hiei.NavalUnitType).toBe(NavalUnitType.Battleship)
     expect(hiei.ActivationStatus).toBe(ActivationStatus.Unactivated) 
   })
 
@@ -74,6 +76,7 @@ describe('CSV Load Service Pearl Harbor', () => {
     expect(arizona.BombardStrength).toBe(6)
     expect(arizona.AirGroup).toBe('')
     expect(arizona.isCarrier()).toBe(false)
+    expect(arizona.NavalUnitType).toBe(NavalUnitType.Battleship)
     expect(arizona.hasSpotterPlane()).toBe(true)
     expect(arizona.isNavalUnit()).toBe(true)
   })
@@ -89,6 +92,7 @@ describe('CSV Load Service Pearl Harbor', () => {
     expect(mahan.MediumGunnery).toBe(0)
     expect(mahan.LongGunnery).toBe(0.5)
     expect(mahan.BombardStrength).toBe(2)
+    expect(mahan.NavalUnitType).toBe(NavalUnitType.Destroyer)    
     expect(mahan.isCarrier()).toBe(false)
     expect(mahan.hasSpotterPlane()).toBe(false)
     expect(mahan.isNavalUnit()).toBe(true)
@@ -148,7 +152,6 @@ describe('CSV Load Service Pearl Harbor', () => {
     expect(shokakuCAG.Hits).toBe(0)
   })
 
-  
   test('Japanese Aircraft Carrier Kaga Carrier Air Group has correct unit values', async () => {
     const kaga = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CV2')
     expect(kaga.Name).toBe('Kaga')

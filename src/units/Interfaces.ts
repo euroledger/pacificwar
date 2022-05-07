@@ -22,3 +22,4 @@ export enum AircraftType {
   LRA = 'LRA',
   Spotter = 'Spotter'
 }
+
