@@ -1,5 +1,6 @@
 import { logger } from '../main'
 import { getDieRoll } from '../utils/Utility'
+import { AirNavalCombatType } from './interfaces'
 
 type IndexType = Array<Array<number>>
 type StrengthDieRollLookUpType = Map<number, IndexType>
@@ -13,31 +14,6 @@ export interface AirCombatResult {
 
 export const TroopQualityCheck = -1
 const zeroFour = -2
-
-export enum AirNavalCombatType {
-  CapvsUncoordinatedMission = 'CAP vs UnCoordinated Mission',
-  CapvsCoordinatedMission = 'CAP vs Coordinated Mission',
-  AirSupremacyvsCap = 'Air Supremacy vs CAP',
-  UncoordinatedStrikevsCAP = 'UnCoordinated Strike vs CAP',
-  CoordinatedStrikevsCAP = 'Coordinated Strike vs CAP',
-  UnimprovedFlakvsAir = 'FLAK (Unimproved) vs Air',
-  ImprovedFlakvsAir = 'Improved FLAK vs Air',
-  FAirvsNaval = 'F Air vs Naval',
-  TAirvsNaval = 'T Air vs Naval',
-  BAirvsNaval = 'B Air vs Naval',
-  AirvsInstallation = 'Air vs Installation',
-  AirvsGroundUnit = 'Air vs Ground Unit',
-  AirvsUnalertedAir = 'Air vs Unalerted (Grounded) Air',
-  LongRangevsNaval = 'Long Range vs Naval',
-  MediumRangvsNaval = 'Mediun Range vs Naval',
-  ShortRangevsNaval = 'Short Range vs Naval',
-  BombardmentvsInstallation = 'Bombardment vs Installation',
-  BombardmentvsGroundUnit = 'Bombardment vs Ground Unit',
-  SubOrNavalvsNaval = 'Submarine or Naval vs Naval',
-  NavalvsSubmarine = 'Naval vs Submarine',
-  NormalBombingFirst10 = 'NormalBombing (first 10 Uses)',
-  FireBombing11 = 'FireBombing (starting with 11th Use)',
-}
 
 
 const zeroMinus = [[zeroFour]]

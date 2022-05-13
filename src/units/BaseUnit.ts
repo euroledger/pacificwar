@@ -46,6 +46,10 @@ export class BaseUnit extends AbstractUnit {
       return this.hex
   }
 
+  public get LaunchCapacity(): number {
+    return this.launchCapacity
+  }
+
   public print(): string {
     return `${this.Id} SIZE ${this.size}`
   }

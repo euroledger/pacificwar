@@ -102,9 +102,9 @@ describe('CSV Load Service Pearl Harbor', () => {
   test('US 2nd MAW has correct unit values', async () => {
     const maw = Main.Mapper.getUnitById<AirUnit>(Side.Allied, '2nd MAW')
     expect(maw.Range).toBe(8)
-    expect(maw.AAStrength).toBe(6)
-    expect(maw.AntiNavalStrength).toBe(2)
-    expect(maw.AntiGroundStrength).toBe(4)
+    expect(maw.AAStrength).toBe(4)
+    expect(maw.AntiNavalStrength).toBe(0)
+    expect(maw.AntiGroundStrength).toBe(2)
     expect(maw.AircraftType).toBe(AircraftType.F)
     expect(maw.AircraftLevel).toBe(1)
     expect(maw.ReverseAA).toBe(6)
@@ -114,14 +114,23 @@ describe('CSV Load Service Pearl Harbor', () => {
 
   test('US 5th Bomber Group has correct unit values', async () => {
     const bg5 = Main.Mapper.getUnitById<AirUnit>(Side.Allied, '5th Bomber Group')
-    expect(bg5.AAStrength).toBe(2)
+    expect(bg5.AAStrength).toBe(-1)
     expect(bg5.Range).toBe(26)
-    expect(bg5.AntiNavalStrength).toBe(1)
-    expect(bg5.AntiGroundStrength).toBe(5)
+    expect(bg5.AntiNavalStrength).toBe(-1)
+    expect(bg5.AntiGroundStrength).toBe(0)
     expect(bg5.AircraftType).toBe(AircraftType.B)
     expect(bg5.AircraftLevel).toBe(0)
     expect(bg5.ReverseAA).toBe(0)
     expect(bg5.Steps).toBe(1)
+  })
+
+  
+  test('18th and 15th Pursuit Group have correct AA unit values', async () => {
+    const pg18 = Main.Mapper.getUnitById<AirUnit>(Side.Allied, '18th Pursuit Group')
+    expect(pg18.AAStrength).toBe(4)
+  
+    const pg15 = Main.Mapper.getUnitById<AirUnit>(Side.Allied, '15th Pursuit Group')
+    expect(pg15.AAStrength).toBe(3)
   })
 
   test('2nd Patrol Wing has correct unit values', async () => {
@@ -156,10 +165,10 @@ describe('CSV Load Service Pearl Harbor', () => {
     const kaga = Main.Mapper.getUnitById<NavalUnit>(Side.Japan, 'CV2')
     expect(kaga.Name).toBe('Kaga')
     const kagaCAG = Main.Mapper.getUnitById<AirUnit>(Side.Japan, kaga.AirGroup)
-    expect(kagaCAG.AAStrength).toBe(7)
+    expect(kagaCAG.AAStrength).toBe(6)
     expect(kagaCAG.Range).toBe(8)
-    expect(kagaCAG.AntiNavalStrength).toBe(8)
-    expect(kagaCAG.AntiGroundStrength).toBe(6)
+    expect(kagaCAG.AntiNavalStrength).toBe(7)
+    expect(kagaCAG.AntiGroundStrength).toBe(5)
     expect(kagaCAG.AircraftType).toBe(AircraftType.F)
     expect(kagaCAG.AircraftLevel).toBe(2)
     expect(kagaCAG.ReverseAA).toBe(7)

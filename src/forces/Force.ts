@@ -43,7 +43,6 @@ export class Force {
 
   public removeUnitFromForceById(unitId: string) {
     GameStatus.print(this.units)
-    console.log()
     const found = this.units.find((unit) => unit.Id === unitId) != undefined
 
     GameStatus.print("found = ", found)

@@ -1,4 +1,4 @@
-import { AirNavalCombatType } from "../displays/AirNavalCombatResultsTable";
+import { AirNavalCombatType } from "../displays/interfaces";
 import { AirUnit } from "../units/AirUnit";
 import { NavalUnit } from "../units/NavalUnit";
 

@@ -1,9 +1,7 @@
 import { FileRow } from '../src/dataload'
-import { Force } from '../src/forces/Force'
 import {
   BlueReconInformation,
   GreenReconInformation,
-  ReconInformation,
   RedReconInformation,
   TaskForce,
   TaskForceOptions
@@ -11,11 +9,10 @@ import {
 import { Main } from '../src/main'
 import { ES1 } from '../src/scenarios/es1PearlHarbor/es1'
 import { Hex } from '../src/map/Hex'
-import { ActivationStatus, AircraftType, Side } from '../src/units/Interfaces'
+import { AircraftType, Side } from '../src/units/Interfaces'
 import { NavalUnit, NavalUnitType } from '../src/units/NavalUnit'
 import { DetectionLevel, SearchChart, SearchOptions, TimeOfDay } from '../src/displays/SearchCharts'
-import { alliedSearchChartResults } from '../src/displays/AlliedSearchTables'
-import { GameStatus } from '../src/scenarios/GameStatus'
+import { alliedAirSearchChartResults, alliedSearchChartResults } from '../src/displays/AlliedSearchTables'
 
 const main = new Main(new ES1())
 
@@ -191,5 +188,23 @@ describe('Actions on Hex Location: Add Task Forces, Search, Perform Detection Ac
     const reconInformation = taskForce1.getReconInformation(result) as RedReconInformation
     expect(reconInformation.numberNavalUnits).toBeGreaterThanOrEqual(3)
     expect(reconInformation.numberNavalUnits).toBeLessThanOrEqual(7)
+  })
+
+  test('Search for Incoming Air Strike - Same Hex', async () => {
+    let dieRoll = 6
+    let options: SearchOptions = {
+      airSearchTable: alliedAirSearchChartResults,
+      range: 0,
+      dieRoll,
+      timeOfDay: TimeOfDay.Day,
+    }
+
+    let result: DetectionLevel = SearchChart.searchForAir(options)
+    expect(result).toBe(DetectionLevel.detectedRed)
+
+    options.dieRoll = 7
+    result = SearchChart.searchForAir(options)
+    expect(result).toBe(DetectionLevel.undetected)
+
   })
 })

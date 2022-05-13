@@ -13,10 +13,11 @@ import { GameStatus } from '../GameStatus'
 import { AirMissionSchematic, AirMissionSchematicOptions, AirMissionType } from '../../airmissions/AirMissionSchematic'
 import { AirUnit } from '../../units/AirUnit'
 import { AirStrikeTarget } from '../../airmissions/AirStrikeTarget'
-import { AirNavalCombatResultsTable, AirNavalCombatType } from '../../displays/AirNavalCombatResultsTable'
+import { AirNavalCombatResultsTable } from '../../displays/AirNavalCombatResultsTable'
 import { minNumberOfAirUnitTargets, maxNumberOfAirUnitTargets, numBattleshipsPerTargetGroup } from './es1Config'
 import { DetectionLevel, SearchChart, SearchOptions, TimeOfDay } from '../../displays/SearchCharts'
 import { alliedSearchChartResults as alliedNavalSearchChartResults } from '../../../src/displays/AlliedSearchTables'
+import { AirNavalCombatType } from '../../displays/interfaces'
 
 // If any of the air mission phases need to be done according to Scenario rules,
 // then that is done in this sub-class
@@ -37,6 +38,9 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
     GameStatus.print(`\t\t\tSearch for Air in hex ${hex.HexNumber}`)
     if (GameStatus.battleCycle === 1) {
       GameStatus.print(`\t\t\t\t => First Battle Cycle, no search conducted`)
+    } else {
+      GameStatus.print(`\t\t\t\t => Second Battle Cycle, do search of incoming strike`)
+      super.detectMisionAirUnits(hex)
     }
   }
 
@@ -101,6 +105,12 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
     const airStrikeTargets: AirStrikeTarget[] = new Array<AirStrikeTarget>()
 
     // allocate Japanese air units to attack these n air units
+
+    // First attack against ships gets the -5 DRM...this should be the strongest Japanese air
+    // unit, ie one of the two 6-step air groups.
+    const shokakuAirGroup = missionAirUnits.filter((unit) => unit.Id === 'CAD5')[0] // shokaku air unit reserved for first strike
+    missionAirUnits = missionAirUnits.filter((unit) => unit.Id != 'CAD5')
+
     const airUnitsAttackingAir = missionAirUnits
       .sort(() => Math.random() - Math.random())
       .slice(0, numAirUnitsAttackingAir)
@@ -117,6 +127,9 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
     }
 
     const airUnitsAttackingNaval = missionAirUnits.filter((el) => !airUnitsAttackingAir.includes(el))
+
+    // insert shokakuAirUnit at front so it fires first
+    airUnitsAttackingNaval.splice(0, 0, shokakuAirGroup) 
 
     // Select 6 battleships to target then allocate attacking units amongst these
     // as per victory conditions (need to get 4 hits on 6 battleships)
@@ -220,7 +233,7 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
 
     GameStatus.print(`\t\t\t\t\t=> Die Roll is ${unmodifiedDieRoll}${modifierStr}`)
 
-    const attackerModifiedStrength = airStrike.Attacker.AntiNavalStrength - airStrike.Attacker.Hits
+    const attackerModifiedStrength = airStrike.Attacker.AntiNavalStrength
     GameStatus.print(`\t\t\t\t\t=> Attacker Anti-Naval Strength is ${attackerModifiedStrength}`)
     let result = AirNavalCombatResultsTable.getHitsFor(
       attackerModifiedStrength,
@@ -377,9 +390,9 @@ class ES1BattleCyle extends DefaultBattleCycle {
     // US search for Japan TFs
     // Use LRA
 
-    // +1 DRM because two TFs in hex...TODO check the hex and work this out
+    // -1 DRM because two TFs in hex...TODO check the hex and work this out
 
-    // for now just pass in the +1 as the DRM
+    // for now just pass in the -1 as the DRM
 
     const dieRoll = getDieRoll()
     let options: SearchOptions = {
@@ -428,9 +441,7 @@ class ES1BattleCyle extends DefaultBattleCycle {
       '-------------------------------------------------------------------------------------------------'
     )
 
-    if (GameStatus.battleCycle === 2) {
-      return // temporary
-    }
+
     // decide target hex, origin hex, mission type and air units
 
     let missionAirUnits: AirUnit[]
@@ -455,6 +466,10 @@ class ES1BattleCyle extends DefaultBattleCycle {
       targetHex: targetHex
     }
     const airMission = new ES1AirMissionSchematic(airMissionOptions)
+
+    if (GameStatus.battleCycle === 2) {
+      // do search of incoming strike to see if US units are alerted 
+    }
     await airMission.doAirMission()
 
     // Update game status

@@ -2,17 +2,17 @@ import { FileRow, DataLoader } from './dataload/DataLoadService'
 import { UnitMapper } from './units/UnitMapper'
 import { Logger } from 'tslog'
 import { PacificWarScenario as PacificWarScenario } from './scenarios/Scenario'
-import { ES1 } from './scenarios/es1PearlHarbor/es1'
 import { PlayerContainer } from './scenarios/PlayerContainer'
 import { promptUser } from './utils/Utility'
 import { GameStatus, GameType } from './scenarios/GameStatus'
 import { Side } from './units/Interfaces'
+import { ES1 } from './scenarios/es1PearlHarbor/es1'
 
 export const logger: Logger = new Logger({
   minLevel: 'info',
   displayDateTime: false,
   displayFunctionName: false,
-  displayFilePath: 'hidden',
+  displayFilePath: 'hidden'
 })
 
 export class Main {
@@ -30,7 +30,7 @@ export class Main {
   public get Scenario(): PacificWarScenario {
     return this.scenario
   }
-  
+
   public async load() {
     this.file = `../../resources/${this.scenario.CSVFile}`
     const loader = new DataLoader()
@@ -45,14 +45,8 @@ export class Main {
 
   public async setUpGame() {
     // 2. create player containers
-    this.alliedPlayer = new PlayerContainer(
-      Side.Allied,
-      Main.mapper.getUnitsBySide(Side.Allied)
-    )
-    this.japanesePlayer = new PlayerContainer(
-      Side.Japan,
-      Main.mapper.getUnitsBySide(Side.Japan)
-    )
+    this.alliedPlayer = new PlayerContainer(Side.Allied, Main.mapper.getUnitsBySide(Side.Allied))
+    this.japanesePlayer = new PlayerContainer(Side.Japan, Main.mapper.getUnitsBySide(Side.Japan))
 
     // 3. game initialization (eg set up task forces)
 
@@ -64,7 +58,7 @@ export class Main {
       const scenario = await promptUser({
         type: 'number',
         value: 'value',
-        message: 'Please enter 1 or 2?',
+        message: 'Please enter 1 or 2?'
       })
       GameStatus.print(`We are going to play scenario ${scenario}`)
 
@@ -72,7 +66,6 @@ export class Main {
     }
 
     await this.scenario.setUpScenario(this.japanesePlayer, this.alliedPlayer)
-
   }
   public get Rows(): FileRow[] | undefined {
     return this.rows
@@ -105,17 +98,16 @@ export class Main {
 
     await this.setUpGame()
 
-    for (let i= 0; i < GameStatus.numberOfRuns; i++) {
+    for (let i = 0; i < GameStatus.numberOfRuns; i++) {
       if (i % 10 === 0) {
-        console.log("run ", i)
+        console.log('run ', i)
       }
       await this.scenario.doSequenceOfPlay()
     }
   }
 }
 
-// later we dsiplay a menu here and plug in the chosen scenario
-const executor = new Main(new ES1())
-executor.main()
 
+  // export const executor = new Main(new ES1())
+  // executor.main()
 

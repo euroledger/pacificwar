@@ -52,11 +52,15 @@ export class AirUnit extends AbstractUnit {
   }
 
   public get AntiNavalStrength(): number {
-    return this.anStrength
+    return Math.max(this.anStrength - this.Hits, -1) // -1 means 0(4) on the results table
   }
 
   public get AntiGroundStrength(): number {
-    return this.agStrength
+    return Math.max(this.agStrength - this.Hits, -1) // -1 means 0(4) on the results table
+  }
+
+  get AAStrength(): number {
+    return Math.max(this.aaStrength - this.Hits, -1) // -1 means 0(4) on the results table
   }
 
   public get AircraftType(): string {

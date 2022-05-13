@@ -1,8 +1,8 @@
 import {
   AirNavalCombatResultsTable,
-  AirNavalCombatType,
 } from '../src/displays/AirNavalCombatResultsTable'
 import { alliedAirSearchChartResults, alliedSearchChartResults as alliedNavalSearchChartResults } from '../src/displays/AlliedSearchTables'
+import { AirNavalCombatType } from '../src/displays/interfaces'
 import { japaneseNavalSearchChartResults } from '../src/displays/JapaneseSearchTables'
 import {
   LightingCondition,
@@ -22,7 +22,7 @@ describe('Pacific War Displays', () => {
   test('Lighting Condition Display', async () => {
     const lightingCondition = LightingConditionDisplay.LightingCondition
 
-    expect(lightingCondition).toBe(LightingCondition.Day_AM)
+    expect(lightingCondition).toBe(LightingCondition.Day_PM)
 
     LightingConditionDisplay.incrementLightingDisplay(2)
     expect(LightingConditionDisplay.LightingCondition).toBe(
