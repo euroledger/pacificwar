@@ -26,7 +26,7 @@ describe('Pacific War Displays', () => {
 
     LightingConditionDisplay.incrementLightingDisplay(2)
     expect(LightingConditionDisplay.LightingCondition).toBe(
-      LightingCondition.Day_PM
+      LightingCondition.Night
     )
 
     LightingConditionDisplay.determineRandomLighting(0)

@@ -1,12 +1,14 @@
 import { DetectionLevel } from "../displays/SearchCharts"
 import { Force } from "../forces/Force"
 import { TaskForce } from "../forces/TaskForce"
+import { AirUnit } from "../units/AirUnit"
+import { AircraftType } from "../units/Interfaces"
 
 export class Hex {
 
     // type -> water, coastal, terrain etc.
 
-    private force!: Force
+    private force: Force | undefined = undefined
     private taskForces: TaskForce[] = new Array<TaskForce>()
     private hexNumber: number = 0
     private detected: boolean = false
@@ -31,6 +33,25 @@ export class Hex {
       return this.force
     }
 
+    public get CapAirUnits(): AirUnit[] {
+      // get alerted air units up to launch capacity of air base + air units from task forces
+
+      let units: AirUnit[] = []
+      for (const tf of this.taskForces) {
+        units = units.concat(tf.AirUnits)
+      }
+
+      // add units from installation (Force) if any
+      if (this.force) {
+        units = units.concat(this.force.AirUnits.filter((unit) => unit.AircraftType === AircraftType.F))
+      }
+
+      // todo if there are carriers in port hex, add the carrier air groups - but only if activated
+      // this simulates a situation where the carrier is at sea in the same hex as the port hex
+      // and not part of a TF
+      // carriers in port cannot launch their aircraft
+      return units
+    }
     public get TaskForces() {
       return this.taskForces
     }

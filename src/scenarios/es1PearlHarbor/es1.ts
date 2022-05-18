@@ -10,7 +10,12 @@ import { NavalUnit } from '../../units/NavalUnit'
 import { Force } from '../../forces/Force'
 import { Hex } from '../../map/Hex'
 import { GameStatus } from '../GameStatus'
-import { AirMissionSchematic, AirMissionSchematicOptions, AirMissionType } from '../../airmissions/AirMissionSchematic'
+import {
+  AirCombatOptions,
+  AirMissionSchematic,
+  AirMissionSchematicOptions,
+  AirMissionType
+} from '../../airmissions/AirMissionSchematic'
 import { AirUnit } from '../../units/AirUnit'
 import { AirStrikeTarget } from '../../airmissions/AirStrikeTarget'
 import { AirNavalCombatResultsTable } from '../../displays/AirNavalCombatResultsTable'
@@ -33,14 +38,15 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
     // no detection in any hexes along route
   }
 
-  public async detectMisionAirUnits(hex: Hex) {
+  public async detectMisionAirUnits(hex: Hex): Promise<DetectionLevel> {
     GameStatus.print('\n')
     GameStatus.print(`\t\t\tSearch for Air in hex ${hex.HexNumber}`)
     if (GameStatus.battleCycle === 1) {
       GameStatus.print(`\t\t\t\t => First Battle Cycle, no search conducted`)
+      return DetectionLevel.undetected
     } else {
       GameStatus.print(`\t\t\t\t => Second Battle Cycle, do search of incoming strike`)
-      super.detectMisionAirUnits(hex)
+      return super.detectMisionAirUnits(hex)
     }
   }
 
@@ -53,6 +59,9 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
   }
 
   public async designateStrikeTargets(): Promise<AirStrikeTarget[]> {
+    if (GameStatus.battleCycle === 2) {
+      return []
+    }
     this.detectMisionAirUnits(this.targetHex)
 
     GameStatus.print('\n')
@@ -60,6 +69,9 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
     GameStatus.print('\t\t\t-----------------------------------------')
 
     const force = this.targetHex.Force
+    if (!force) {
+      throw Error('Oahu force not found!')
+    }
     const taskForces = this.targetHex.TaskForces
 
     const numForces: number = force === undefined ? 0 : 1
@@ -75,8 +87,6 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
     )
 
     return airStrikeTargets
-
-    // for each air strike attacker-target pair conduct one attack using the correct row on the Air-Naval Combat Table
   }
 
   // Air Unit targeting for first battle cycle
@@ -129,7 +139,7 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
     const airUnitsAttackingNaval = missionAirUnits.filter((el) => !airUnitsAttackingAir.includes(el))
 
     // insert shokakuAirUnit at front so it fires first
-    airUnitsAttackingNaval.splice(0, 0, shokakuAirGroup) 
+    airUnitsAttackingNaval.splice(0, 0, shokakuAirGroup)
 
     // Select 6 battleships to target then allocate attacking units amongst these
     // as per victory conditions (need to get 4 hits on 6 battleships)
@@ -169,6 +179,38 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
     }
   }
 
+  public allocateAirCombatHits(result: { hitsvsEscort: number; hitsvsCap: number }, options: AirCombatOptions) {
+    // all hits go to CAP or escort unit, then any excess hits are
+    // 1. Mission Air Units: if CAP unit eliminated, allocate hits (2 at a time to cause abort) to others
+
+    if (options.escortUnit) {
+      // allocate all hits to escort unit up to remaining hits/steps in the unit
+      let hitsStillToAllocate = result.hitsvsEscort - options.escortUnit.Steps
+      options.escortUnit.Hits = Math.min(6, options.escortUnit?.Hits + result.hitsvsEscort)
+      if (result.hitsvsEscort >= 2) {
+        options.escortUnit.Aborted = true
+      }
+      // escort unit eliminated...distribute remaining hits amongst mission air units
+      // sort mission air units by AA strength and allocate two hits per unit 9beginning with strongest)
+      // until no more hits to allocate
+      const otherUnits = options.attackingUnits.filter((unit) => unit.Id !== options.escortUnit?.Id)
+      let units = otherUnits.sort((a, b) => b.AAStrength - a.AAStrength)
+
+      while (hitsStillToAllocate > 0 && units.length > 0) {
+        const hitsOnThisUnit = Math.min(hitsStillToAllocate, Math.min(units[0].Steps, 2))
+        hitsStillToAllocate -= hitsOnThisUnit
+        units[0].Hits += hitsOnThisUnit
+        console.log(`Unit Id ${units[0].Id} now has ${units[0].Steps} steps`)
+
+        if (hitsOnThisUnit === 2) {
+          units[0].Aborted = true
+          units = units.filter((unit) => unit.Id !== units[0].Id)
+        }
+      }
+
+      GameStatus.print(`\t\t\tEscort Unit Id ${options.escortUnit.Id} now has ${options.escortUnit.Steps} steps`)
+    }
+  }
   public strikeStrafeProcedure(airStrikeTargets: AirStrikeTarget[]) {
     GameStatus.print('\n')
     GameStatus.print(`\t\t\tResolve Air Strikes`)
@@ -302,7 +344,7 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
       GameStatus.print(`\t\t\t\t=> First Battle Cycle hits doubled, Final Num Hits = ${hits}`)
     }
     const stepsAtStart = airStrike.AirTarget.Steps
-    airStrike.AirTarget.Steps -= hits // reduce the air unit's steps by hits (min 0)
+    airStrike.AirTarget.Hits += hits // reduce the air unit's steps by hits (min 0)
 
     const pluralStr = airStrike.AirTarget.Steps === 1 ? '' : 's'
 
@@ -416,13 +458,11 @@ class ES1BattleCyle extends DefaultBattleCycle {
 
       for (const taskForce of hex.TaskForces) {
         if (result === DetectionLevel.detectedRed) {
-          taskForce.printRedReconInfo("" + taskForce.TaskForceId)
-        }
-        else if (result === DetectionLevel.detectedGreen) {
-          taskForce.printGreenReconInfo("" + taskForce.TaskForceId)
-        }
-        else if (result === DetectionLevel.detectedBlue) {
-          taskForce.printBlueReconInfo("" + taskForce.TaskForceId)
+          taskForce.printRedReconInfo('' + taskForce.TaskForceId)
+        } else if (result === DetectionLevel.detectedGreen) {
+          taskForce.printGreenReconInfo('' + taskForce.TaskForceId)
+        } else if (result === DetectionLevel.detectedBlue) {
+          taskForce.printBlueReconInfo('' + taskForce.TaskForceId)
         }
       }
 
@@ -440,7 +480,6 @@ class ES1BattleCyle extends DefaultBattleCycle {
     GameStatus.print(
       '-------------------------------------------------------------------------------------------------'
     )
-
 
     // decide target hex, origin hex, mission type and air units
 
@@ -468,7 +507,7 @@ class ES1BattleCyle extends DefaultBattleCycle {
     const airMission = new ES1AirMissionSchematic(airMissionOptions)
 
     if (GameStatus.battleCycle === 2) {
-      // do search of incoming strike to see if US units are alerted 
+      // do search of incoming strike to see if US units are alerted
     }
     await airMission.doAirMission()
 

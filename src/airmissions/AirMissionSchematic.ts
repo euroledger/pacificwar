@@ -7,12 +7,19 @@ import { AirStrikeTarget } from './AirStrikeTarget'
 import { AircraftType } from '../units/Interfaces'
 import { AirNavalCombatType } from '../displays/interfaces'
 import { AirNavalCombatResultsTable } from '../displays/AirNavalCombatResultsTable'
+import { DetectionLevel, SearchChart, SearchOptions, TimeOfDay } from '../displays/SearchCharts'
+import { alliedAirSearchChartResults } from '../displays/AlliedSearchTables'
 
 export enum AirMissionType {
   AirStrike = 'Air Strike',
   AirSupremacy = 'Air Supremacy',
   Ferry = 'Ferry',
   Paradrop = 'Paradrop'
+}
+
+export type AirCombatResults = {
+  hitsvsEscort: number
+  hitsvsCap: number
 }
 
 export interface AirMissionSchematicOptions {
@@ -59,24 +66,31 @@ export class AirMissionSchematic {
     }
     // current hex -> always do search
     if (!this.detected) {
-      await this.detectMisionAirUnits(this.targetHex)
+      this.detected = (await this.detectMisionAirUnits(this.targetHex)) !== DetectionLevel.undetected
     }
     airStrikeTargets = await this.designateStrikeTargets()
     if (!airStrikeTargets) {
-      throw Error('No air strike targets designconstated')
+      throw Error('No air strike targets designated')
     }
     if (this.detected) {
+      GameStatus.print('\n')
+      GameStatus.print('\t\t\tResolve CAP')
+      GameStatus.print('\t\t\t------------')
+
       const capUnit: AirUnit | undefined = this.getCAPUnit()
 
       const airCombatOptions: AirCombatOptions = {
         coordinated: this.coordinated,
         attackingUnits: this.missionAirUnits,
-        defendingUnits: this.targetHex.Force.AirUnits, // todo: Task Forces
+        defendingUnits: this.targetHex.CapAirUnits,
         capUnit: capUnit,
         escortUnit: this.getEscortUnit(capUnit != undefined)
       }
 
       this.capProcedure(airCombatOptions)
+
+      GameStatus.print('\n\t\t\tResolve Flak')
+      GameStatus.print('\t\t\t------------')
       this.flakProcedure()
       if (!this.allMissionUnitsAborted && airStrikeTargets) {
         this.strikeStrafeProcedure(airStrikeTargets)
@@ -89,6 +103,9 @@ export class AirMissionSchematic {
   }
 
   public getAntiAirStrengthModifier(airUnits: AirUnit[], unitToExclude?: AirUnit): number {
+    if (!airUnits || airUnits.length === 0) {
+      return 0
+    }
     let otherUnits: AirUnit[] = new Array<AirUnit>()
     if (unitToExclude) {
       otherUnits = this.getOtherAirUnits(airUnits, unitToExclude)
@@ -101,8 +118,12 @@ export class AirMissionSchematic {
       }
     })
 
-    return Math.floor(count[0] / 12 + count[1] / 6 + count[2] / 3)
+    const L0modifier = Math.floor(count[0] / 12)
+    const L1modifier = Math.floor(count[1] / 6)
+    const L2modifier = Math.floor(count[2] / 3)
+    return L0modifier + L1modifier + L2modifier
   }
+
   private getHighestRatedAirUnitByType(airUnits: AirUnit[], type: string) {
     const unitsByType = airUnits.filter((unit) => unit.AircraftType === type)
     return unitsByType.reduce((previousValue, nextValue) => {
@@ -131,7 +152,7 @@ export class AirMissionSchematic {
 
   public getCAPUnit(): AirUnit | undefined {
     // default is to use the highest rated fighter as CAP...will be overridden by subclasses
-    return this.getHighestRatedAirUnitByType(this.targetHex.Force.AirUnits, AircraftType.F)
+    return this.getHighestRatedAirUnitByType(this.targetHex.CapAirUnits, AircraftType.F)
   }
 
   public isCoordinated(dieRoll: number): boolean {
@@ -179,8 +200,22 @@ export class AirMissionSchematic {
   }
 
   // in future this would involve air units moving hex by hex and possibly being detected before the target hex
-  public async detectMisionAirUnits(hex: Hex) {
+  public async detectMisionAirUnits(hex: Hex): Promise<DetectionLevel> {
     // only implemented for target hex initially
+    const dieRoll = getDieRoll()
+    let options: SearchOptions = {
+      airSearchTable: alliedAirSearchChartResults,
+      range: 0,
+      dieRoll,
+      timeOfDay: TimeOfDay.Day
+    }
+
+    let result: DetectionLevel = SearchChart.searchForAir(options)
+    const resultStr = result === DetectionLevel.undetected ? 'NOT DETECTED' : 'DETECTED'
+    GameStatus.print('\n\t\t\t\t => Search Die Roll is ' + dieRoll)
+    GameStatus.print('\t\t\t\t => Result is ' + resultStr)
+
+    return result
   }
 
   public async designateStrikeTargets(): Promise<AirStrikeTarget[] | undefined> {
@@ -211,26 +246,44 @@ export class AirMissionSchematic {
     const capvsEscortModifiedStrength = options.capUnit.AAStrength + defendingDrm
     const escortvsCapModifiedStrength = options.escortUnit.AAStrength + attackingDrm
 
+    GameStatus.print('\n')
+    GameStatus.print(`\t\t\tUS CAP Unit is ${options.capUnit.Id} - AA Strength ${options.capUnit.AAStrength}`)
+    GameStatus.print(`\t\t\tDefending Strength Modifier is ${defendingDrm}`)
+    GameStatus.print(`\t\t\t => Final Modified Strength =  ${capvsEscortModifiedStrength}`)
+
+    GameStatus.print(
+      `\n\t\t\tJapanese Escort Unit is ${options.escortUnit.Id} - AA Strength ${options.escortUnit.AAStrength}`
+    )
+    GameStatus.print(`\t\t\tDefending Strength Modifier is ${attackingDrm}`)
+    GameStatus.print(`\t\t\t => Final Modified Strength =  ${escortvsCapModifiedStrength}`)
+
     const CapCombatType = options.coordinated
       ? AirNavalCombatType.CapvsCoordinatedMission
       : AirNavalCombatType.CapvsUncoordinatedMission
-      
+
     const escortCombatType = options.coordinated
       ? AirNavalCombatType.CoordinatedStrikevsCAP
       : AirNavalCombatType.UncoordinatedStrikevsCAP
 
+    const defenderDieRoll = capvsEscortDieRoll ?? getDieRoll()
+    GameStatus.print(`\n\t\t\t =>  Defender (CAP) Die Roll =  ${defenderDieRoll}`)
+
     let capResult = AirNavalCombatResultsTable.getHitsFor(
       capvsEscortModifiedStrength,
-      capvsEscortDieRoll ?? getDieRoll(),
+      defenderDieRoll,
       CapCombatType
     )
     if (capResult.hits === undefined) {
       throw Error(`capvsEscortAirUnits: No result from Air-Naval Combat Results Table`)
     }
+    GameStatus.print(`\t\t\t =>  Defender (CAP) Hits =  ${capResult.hits}`)
+
+    const attackerDieRoll = escortvsCapDieRoll ?? getDieRoll()
+    GameStatus.print(`\t\t\t =>  Attacker (Air Mission Escort) Die Roll =  ${attackerDieRoll}`)
 
     let escortResult = AirNavalCombatResultsTable.getHitsFor(
       escortvsCapModifiedStrength,
-      escortvsCapDieRoll ?? getDieRoll(),
+      attackerDieRoll,
       escortCombatType
     )
     if (capResult.hits === undefined) {
@@ -239,6 +292,8 @@ export class AirMissionSchematic {
     if (escortResult.hits === undefined) {
       throw Error(`capvsEscortAirUnits: No (Escort vs CAP) result from Air-Naval Combat Results Table`)
     }
+    GameStatus.print(`\t\t\t =>  Attacker (Air Mission Escort) Hits =  ${escortResult.hits}`)
+
     return { hitsvsEscort: capResult.hits, hitsvsCap: escortResult.hits }
   }
 
@@ -256,8 +311,11 @@ export class AirMissionSchematic {
       return
     }
 
-    this.capvsEscortAirUnits(options)
+    const result = this.capvsEscortAirUnits(options)
+    this.allocateAirCombatHits(result, options)
   }
+
+  public allocateAirCombatHits(result: AirCombatResults, options: AirCombatOptions) {}
 
   public async flakProcedure() {}
 

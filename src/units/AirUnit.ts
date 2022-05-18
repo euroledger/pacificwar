@@ -27,17 +27,10 @@ export class AirUnit extends AbstractUnit {
   private reverseAA!: number
   private steps!: number
   private eliminated!: boolean
+  private aborted: boolean = false
 
   constructor(options: AirUnitOptions) {
-    super(
-      options.name,
-      options.type,
-      options.side,
-      options.id,
-      options.apCost,
-      options.aaStrength,
-      options.hits
-    )
+    super(options.name, options.type, options.side, options.id, options.apCost, options.aaStrength, options.hits)
     this.range = options.range
     this.anStrength = options.anStrength
     this.agStrength = options.agStrength
@@ -45,6 +38,7 @@ export class AirUnit extends AbstractUnit {
     this.aircraftLevel = options.aircraftLevel
     this.reverseAA = options.reverseAA
     this.steps = options.steps
+    this.hits = this.aircraftType != AircraftType.LRA ? 6 - this.steps : 0
   }
 
   public get Range() {
@@ -75,7 +69,10 @@ export class AirUnit extends AbstractUnit {
     return this.reverseAA
   }
   public get Steps(): number {
-    return this.steps
+    if (this.aircraftType === AircraftType.LRA) {
+      return 1 - this.Hits
+    }
+    return 6 - this.Hits
   }
 
   public get Level(): number {
@@ -90,7 +87,22 @@ export class AirUnit extends AbstractUnit {
   }
 
   public get Hits(): number {
-    return 6 - this.steps
+    return this.hits
+  }
+
+  public get Aborted(): boolean {
+    return this.aborted
+  }
+
+  public set Aborted(aborted: boolean) {
+    this.aborted = aborted
+  }
+
+  public set Hits(hits: number) {
+    this.hits = hits
+    if (this.Steps === 0) {
+      this.eliminated = true
+    }
   }
 
   public get Eliminated(): boolean {

@@ -125,7 +125,7 @@ describe('CSV Load Service Pearl Harbor', () => {
   })
 
   
-  test('18th and 15th Pursuit Group have correct AA unit values', async () => {
+  test('US 18th and 15th Pursuit Group have correct AA unit values', async () => {
     const pg18 = Main.Mapper.getUnitById<AirUnit>(Side.Allied, '18th Pursuit Group')
     expect(pg18.AAStrength).toBe(4)
   
@@ -133,7 +133,7 @@ describe('CSV Load Service Pearl Harbor', () => {
     expect(pg15.AAStrength).toBe(3)
   })
 
-  test('2nd Patrol Wing has correct unit values', async () => {
+  test('US 2nd Patrol Wing has correct unit values', async () => {
     const pw2 = Main.Mapper.getUnitById<AirUnit>(Side.Allied, '2nd Patrol Wing')
     expect(pw2.AAStrength).toBe(NaN)
     expect(pw2.Range).toBe(16)
@@ -174,19 +174,6 @@ describe('CSV Load Service Pearl Harbor', () => {
     expect(kagaCAG.ReverseAA).toBe(7)
     expect(kagaCAG.Steps).toBe(5)
     expect(kagaCAG.Hits).toBe(1)
-  })
-
-  test('2nd Patrol Wing has correct unit values', async () => {
-    const bg5 = Main.Mapper.getUnitById<AirUnit>(Side.Allied, '2nd Patrol Wing')
-    expect(bg5.AAStrength).toBe(NaN)
-    expect(bg5.Range).toBe(16)
-    expect(bg5.AircraftType).toBe(AircraftType.LRA)
-    expect(bg5.Steps).toBe(1)
-    expect(bg5.AircraftLevel).toBe(NaN)
-    expect(bg5.ReverseAA).toBe(NaN)
-    expect(bg5.AntiNavalStrength).toBe(NaN)
-    expect(bg5.AntiGroundStrength).toBe(NaN)
-    expect(bg5.isNavalUnit()).toBe(false)
   })
 
   test('Pearl Harbor Base Unit has correct values', async () => {

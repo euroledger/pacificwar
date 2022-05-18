@@ -8,3 +8,7 @@ export const maxNumberOfAirUnitTargets= 3
 /* Minimum number of air units to attack on battle cycle 1 */
 export const minNumberOfAirUnitTargets= 1
 
+/* Move one Japanese task force on battle cycle 1 */
+/* This is to avoid the -1 DRM on BC2 searches */
+export const moveJapaneseTaskForceBC1 = false
+
