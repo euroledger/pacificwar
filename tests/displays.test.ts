@@ -17,7 +17,6 @@ import {
 import { GameStatus } from '../src/scenarios/GameStatus'
 import { AircraftType } from '../src/units/Interfaces'
 
-GameStatus.TestMode = true
 describe('Pacific War Displays', () => {
   test('Lighting Condition Display', async () => {
     const lightingCondition = LightingConditionDisplay.LightingCondition

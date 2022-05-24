@@ -6,9 +6,11 @@ import { getDieRoll } from '../utils/Utility'
 import { AirStrikeTarget } from './AirStrikeTarget'
 import { AircraftType } from '../units/Interfaces'
 import { AirNavalCombatType } from '../displays/interfaces'
-import { AirNavalCombatResultsTable } from '../displays/AirNavalCombatResultsTable'
+import { AirCombatResult, AirNavalCombatResultsTable } from '../displays/AirNavalCombatResultsTable'
 import { DetectionLevel, SearchChart, SearchOptions, TimeOfDay } from '../displays/SearchCharts'
 import { alliedAirSearchChartResults } from '../displays/AlliedSearchTables'
+import { AbstractUnit } from '../units/AbstractUnit'
+import { Force } from '../forces/Force'
 
 export enum AirMissionType {
   AirStrike = 'Air Strike',
@@ -57,6 +59,8 @@ export class AirMissionSchematic {
   }
 
   public async doAirMission() {
+    GameStatus.airMissionConcluded = false
+
     let airStrikeTargets: AirStrikeTarget[] | undefined
 
     this.airMissionPreliminaryProcedure()
@@ -91,13 +95,21 @@ export class AirMissionSchematic {
 
       GameStatus.print('\n\t\t\tResolve Flak')
       GameStatus.print('\t\t\t------------')
-      this.flakProcedure()
+      await this.flakProcedure(airCombatOptions)
       if (!this.allMissionUnitsAborted && airStrikeTargets) {
         this.strikeStrafeProcedure(airStrikeTargets)
       }
     } else {
+      const airCombatOptions: AirCombatOptions = {
+        coordinated: this.coordinated,
+        attackingUnits: this.missionAirUnits,
+        defendingUnits: this.targetHex.CapAirUnits,
+        capUnit: undefined,
+        escortUnit: undefined
+      }
       this.strikeStrafeProcedure(airStrikeTargets)
-      this.flakProcedure()
+      // note: no CAP air-to-air combat if mission undetected
+      await this.flakProcedure(airCombatOptions)
       this.airMissionConclusionProcedure()
     }
   }
@@ -124,8 +136,11 @@ export class AirMissionSchematic {
     return L0modifier + L1modifier + L2modifier
   }
 
-  private getHighestRatedAirUnitByType(airUnits: AirUnit[], type: string) {
+  private getHighestRatedAirUnitByType(airUnits: AirUnit[], type: string): AirUnit | undefined{
     const unitsByType = airUnits.filter((unit) => unit.AircraftType === type)
+    if (unitsByType.length === 0) {
+      return undefined
+    }
     return unitsByType.reduce((previousValue, nextValue) => {
       return previousValue.AAStrength > nextValue.AAStrength ? previousValue : nextValue
     })
@@ -268,11 +283,7 @@ export class AirMissionSchematic {
     const defenderDieRoll = capvsEscortDieRoll ?? getDieRoll()
     GameStatus.print(`\n\t\t\t =>  Defender (CAP) Die Roll =  ${defenderDieRoll}`)
 
-    let capResult = AirNavalCombatResultsTable.getHitsFor(
-      capvsEscortModifiedStrength,
-      defenderDieRoll,
-      CapCombatType
-    )
+    let capResult = AirNavalCombatResultsTable.getHitsFor(capvsEscortModifiedStrength, defenderDieRoll, CapCombatType)
     if (capResult.hits === undefined) {
       throw Error(`capvsEscortAirUnits: No result from Air-Naval Combat Results Table`)
     }
@@ -317,11 +328,57 @@ export class AirMissionSchematic {
 
   public allocateAirCombatHits(result: AirCombatResults, options: AirCombatOptions) {}
 
-  public async flakProcedure() {}
+  public async getFlakHits(aaStrength: number, dieRoll?: number): Promise<AirCombatResult> {
+    let flakResult = AirNavalCombatResultsTable.getHitsFor(
+      aaStrength,
+      dieRoll ?? getDieRoll(),
+      AirNavalCombatType.UnimprovedFlakvsAir
+    )
+    return flakResult
+  }
+  public async flakProcedure(airCombatOptions: AirCombatOptions, dieRoll?: number): Promise<void> {
+    const flakUnits = this.determineFlakUnits()
+    const aaStrength = this.calculateFlakStrength(flakUnits)
+    const result = await this.getFlakHits(aaStrength, dieRoll)
+    if (!result.hits) {
+      throw Error (`No result from getFlakHits, aaStrength ${aaStrength}, dieRoll ${dieRoll}`)
+    }
+    this.allocateFlakHits(result.hits, airCombatOptions)
+  }
+
+  public allocateFlakHits(hits: number, options: AirCombatOptions) {
+  }
+
+  // todo add task forces to the method
+  public determineFlakUnits(force?: Force): AbstractUnit[] {
+    let flakUnits = new Array<AbstractUnit>()
+
+    const groundUnits: AbstractUnit[] = force?.GroundUnits as AbstractUnit[]
+    flakUnits = flakUnits.concat(groundUnits)
+
+    // get the 4 naval units with highest anti-air strength
+    let navalUnits: AbstractUnit[] = force?.NavalUnits as AbstractUnit[]
+    navalUnits = navalUnits.sort((a, b) => b.AAStrength - a.AAStrength)
+    navalUnits = navalUnits.slice(0, Math.min(navalUnits.length, 4))
+
+    flakUnits = flakUnits.concat(navalUnits)
+
+    const baseUnit: AbstractUnit = force?.BaseUnit as AbstractUnit
+    flakUnits.push(baseUnit)
+
+    return flakUnits
+  }
+
+  public calculateFlakStrength(units: AbstractUnit[]): number {
+    return units.reduce((sum, current) => sum + current.AAStrength, 0)
+  }
 
   public strikeStrafeProcedure(airStrikeTargets: AirStrikeTarget[]) {}
 
   public distributeHits(group: NavalUnit[], hits: number) {
+    if (group.length == 0) {
+      return // can happen in tests
+    }
     // allocate hits evenly across group according to priority
     for (let index = 0; index < hits; index++) {
       const navalUnit = group[index % group.length]
@@ -344,5 +401,7 @@ export class AirMissionSchematic {
     }
   }
 
-  public async airMissionConclusionProcedure() {}
+  public async airMissionConclusionProcedure() {
+    GameStatus.airMissionConcluded = true
+  }
 }

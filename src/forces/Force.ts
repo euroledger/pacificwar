@@ -9,6 +9,7 @@ import { AirUnit } from '../units/AirUnit'
 import { BaseUnit } from '../units/BaseUnit'
 import { ActivationStatus, Side } from '../units/Interfaces'
 import { NavalUnit } from '../units/NavalUnit'
+import { GroundUnit } from '../units/GroundUnit'
 
 export interface ForceOptions {
   side: Side
@@ -107,6 +108,10 @@ export class Force {
     if (base.length === 1) {
       return base[0] as BaseUnit
     }
+  }
+
+  public get GroundUnits(): GroundUnit[] {
+    return []
   }
 
   public print() {
