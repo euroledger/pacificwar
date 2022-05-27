@@ -43,7 +43,13 @@ export class Hex {
 
       // add units from installation (Force) if any
       if (this.force) {
-        units = units.concat(this.force.AirUnits.filter((unit) => unit.AircraftType === AircraftType.F))
+        // units = units.concat(this.force.AirUnits.filter((unit) => unit.AircraftType === AircraftType.F))
+
+        // clarification: all alerted units are part of the defending CAP although only F units
+        // can participate (or provide a DRM for) air combat, all [alerted] units can take hits
+
+        // TODO should actually limit this to the number of steps of the airbase
+        return this.force.AirUnits
       }
 
       // todo if there are carriers in port hex, add the carrier air groups - but only if activated

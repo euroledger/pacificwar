@@ -38,7 +38,7 @@ const seventeen: IndexType = [[10], [10], [10], [10], [10], [10], [10], [10], [1
 const eighteen: IndexType = [[10], [10], [10], [10], [10], [10], [10], [10], [10], [10], [9], [0,8]]
 const nineteenPlus: IndexType = [[10], [10], [10], [10], [10], [10], [10], [10], [10], [10], [10], [0,9]]
 
-const dieRollLookupTable: StrengthDieRollLookUpType = new Map([
+const dieRollLookupTable: Readonly<StrengthDieRollLookUpType> = new Map([
   [-1, zeroMinus],
   [0, zero],
   [1, one],
@@ -63,7 +63,7 @@ const dieRollLookupTable: StrengthDieRollLookUpType = new Map([
 ])
 
 
-const airCombatResults: AirCombatResultsType = new Map([
+const airCombatResults: Readonly<AirCombatResultsType> = new Map([
 
   // Air Combat
   [AirNavalCombatType.CapvsUncoordinatedMission, [0,1,1,1,2,3,3,3,4,4,5,5]],
@@ -107,7 +107,7 @@ const airCombatResults: AirCombatResultsType = new Map([
 ])
 
 // use die roll to get the correct row...that row (index) is the same as the number of hits in the Critical Hit table
-const criticalHitTable: IndexType = [
+const criticalHitTable: Readonly<IndexType> = [
   [0,5], 
   [6,7],
   [8],

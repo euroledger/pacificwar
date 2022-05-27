@@ -10,7 +10,6 @@ import { AirCombatResult, AirNavalCombatResultsTable } from '../displays/AirNava
 import { DetectionLevel, SearchChart, SearchOptions, TimeOfDay } from '../displays/SearchCharts'
 import { alliedAirSearchChartResults } from '../displays/AlliedSearchTables'
 import { AbstractUnit } from '../units/AbstractUnit'
-import { Force } from '../forces/Force'
 
 export enum AirMissionType {
   AirStrike = 'Air Strike',
@@ -329,16 +328,23 @@ export class AirMissionSchematic {
   public allocateAirCombatHits(result: AirCombatResults, options: AirCombatOptions) {}
 
   public async getFlakHits(aaStrength: number, dieRoll?: number): Promise<AirCombatResult> {
+
+    const roll = dieRoll ?? getDieRoll()
+    GameStatus.print(`\t\t\t\t=> Die Roll: ${roll} `)
+
     let flakResult = AirNavalCombatResultsTable.getHitsFor(
       aaStrength,
-      dieRoll ?? getDieRoll(),
+      roll,
       AirNavalCombatType.UnimprovedFlakvsAir
     )
+    GameStatus.print(`\t\t\t\t=> Hits: ${flakResult.hits} `)
+
     return flakResult
   }
   public async flakProcedure(airCombatOptions: AirCombatOptions, dieRoll?: number): Promise<void> {
     const flakUnits = this.determineFlakUnits()
     const aaStrength = this.calculateFlakStrength(flakUnits)
+    GameStatus.print(`\t\t\t\t=> Total Flak Strength: ${aaStrength}`)
     const result = await this.getFlakHits(aaStrength, dieRoll)
     if (!result.hits) {
       throw Error (`No result from getFlakHits, aaStrength ${aaStrength}, dieRoll ${dieRoll}`)
@@ -350,27 +356,36 @@ export class AirMissionSchematic {
   }
 
   // todo add task forces to the method
-  public determineFlakUnits(force?: Force): AbstractUnit[] {
+  public determineFlakUnits(): AbstractUnit[] {
     let flakUnits = new Array<AbstractUnit>()
 
-    const groundUnits: AbstractUnit[] = force?.GroundUnits as AbstractUnit[]
+    if (!this.targetHex.Force) {
+      return []
+    }
+
+    const groundUnits: AbstractUnit[] = this.targetHex.Force.GroundUnits as AbstractUnit[]
     flakUnits = flakUnits.concat(groundUnits)
 
     // get the 4 naval units with highest anti-air strength
-    let navalUnits: AbstractUnit[] = force?.NavalUnits as AbstractUnit[]
+    let navalUnits: AbstractUnit[] = this.targetHex.Force.NavalUnits as AbstractUnit[]
     navalUnits = navalUnits.sort((a, b) => b.AAStrength - a.AAStrength)
     navalUnits = navalUnits.slice(0, Math.min(navalUnits.length, 4))
 
     flakUnits = flakUnits.concat(navalUnits)
 
-    const baseUnit: AbstractUnit = force?.BaseUnit as AbstractUnit
+    const baseUnit: AbstractUnit = this.targetHex.Force.BaseUnit as AbstractUnit
     flakUnits.push(baseUnit)
 
+    GameStatus.print(`\t\t\t\t=> Units Used For Flak:`)
+
+    for (const unit of flakUnits) {
+      GameStatus.print(`\t\t\t\t\t=> ${unit.Id} ${unit.Name} (Hits ${unit.Hits}) AA Strength => ${unit.AAStrength}`)
+    }
     return flakUnits
   }
 
   public calculateFlakStrength(units: AbstractUnit[]): number {
-    return units.reduce((sum, current) => sum + current.AAStrength, 0)
+    return units.reduce((sum, current) => sum + Math.max(current.AAStrength, 0), 0)
   }
 
   public strikeStrafeProcedure(airStrikeTargets: AirStrikeTarget[]) {}

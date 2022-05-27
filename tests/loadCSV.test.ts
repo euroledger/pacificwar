@@ -7,8 +7,9 @@ import { BaseUnit } from '../src/units/BaseUnit'
 import { ActivationStatus, AircraftType, Side } from '../src/units/Interfaces'
 import { NavalUnit, NavalUnitType, SubmarineUnit } from '../src/units/NavalUnit'
 
-const main = new Main(new ES1())
+
 describe('CSV Load Service Pearl Harbor', () => {
+  const main = new Main(new ES1())
   let rows: FileRow[] | undefined
 
   test('Load all rows for Engagement Scenario 1: Pearl Harbor', async () => {
@@ -38,6 +39,7 @@ describe('CSV Load Service Pearl Harbor', () => {
     expect(kaga.ShortGunnery).toBe(-1)
     expect(kaga.MediumGunnery).toBe(-1)
     expect(kaga.LongGunnery).toBe(-1)
+    expect(kaga.ASW).toBe(1)
     expect(kaga.AirGroup).toBe('CAD2')
     expect(kaga.isCarrier()).toBe(true)
     expect(kaga.hasSpotterPlane()).toBe(false)
@@ -67,7 +69,7 @@ describe('CSV Load Service Pearl Harbor', () => {
     const arizona = Main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'BB4')
     expect(arizona.isCapitalShip()).toBe(true)
     expect(arizona.LaunchCapacity).toBe(NaN)
-    expect(arizona.AAStrength).toBe(3)
+    expect(arizona.AAStrength).toBe(1)
     expect(arizona.HitCapacity).toBe(6)
     expect(arizona.CanBeCrippled).toBe(true)
     expect(arizona.ShortGunnery).toBe(7)
@@ -177,8 +179,8 @@ describe('CSV Load Service Pearl Harbor', () => {
   })
 
   test('Pearl Harbor Base Unit has correct values', async () => {
-    const ph = Main.Mapper.getUnitById<BaseUnit>(Side.Allied, 'Pearl Harbor')
-    expect(ph.AAStrength).toBe(3)
+    const ph = Main.Mapper.getUnitById<BaseUnit>(Side.Allied, 'Pearl Harbor Base')
+    expect(ph.AAStrength).toBe(4)
     expect(ph.Size).toBe(BaseSize.Large)
     expect(ph.Hex.HexNumber).toBe(2860)
   })

@@ -26,9 +26,9 @@ export interface GreenReconInformation extends ReconInformation {
   unitReport: ShipCountByType[] // array of unit type -> number pairs eg 'BB' -> 2, 'CV' -> 3 etc.
 }
 
-const illegalCoreTypes: string[] = ['CVE', 'ST', 'CA', 'CL', 'DE'] // DD can sometimes be allowed ie if it is carrying troops
+const illegalCoreTypes: Readonly<string[]> = ['CVE', 'ST', 'CA', 'CL', 'DE'] // DD can sometimes be allowed ie if it is carrying troops
 
-const illegalScreenTypes: string[] = ['CV', 'CVL', 'CVS']
+const illegalScreenTypes: Readonly<string[]> = ['CV', 'CVL', 'CVS']
 
 export interface TaskForceOptions {
   side: Side

@@ -1,9 +1,4 @@
-import {
-  AirCombatOptions,
-  AirMissionSchematic,
-  AirMissionSchematicOptions,
-  AirMissionType
-} from '../src/airmissions/AirMissionSchematic'
+import { AirCombatOptions, AirMissionSchematicOptions, AirMissionType } from '../src/airmissions/AirMissionSchematic'
 import { AirStrikeTarget, AirStrikeTargetOptions } from '../src/airmissions/AirStrikeTarget'
 import { FileRow } from '../src/dataload'
 import { Force, ForceOptions } from '../src/forces/Force'
@@ -17,7 +12,6 @@ import { BaseUnit } from '../src/units/BaseUnit'
 import { Side } from '../src/units/Interfaces'
 import { NavalUnit } from '../src/units/NavalUnit'
 import { AirNavalCombatType } from '../src/displays/interfaces'
-import { GameStatus } from '../src/scenarios/GameStatus'
 
 describe('Air Mission Schmatic', () => {
   let rows: FileRow[] | undefined
@@ -83,7 +77,11 @@ describe('Air Mission Schmatic', () => {
     pg15.Hits = 1
     bg11.Hits = 3
     bg5.Hits = 5
-
+    maw2.HitsThisMission = 0
+    pg18.HitsThisMission = 0
+    pg15.HitsThisMission = 0
+    bg11.HitsThisMission = 0
+    bg5.HitsThisMission = 0
     maw2.Eliminated = false
     pg18.Eliminated = false
     pg15.Eliminated = false
@@ -96,6 +94,13 @@ describe('Air Mission Schmatic', () => {
     cad4.Hits = 2
     cad5.Hits = 0
     cad6.Hits = 0
+    cad1.HitsThisMission = 0
+    cad2.HitsThisMission = 0
+    cad3.HitsThisMission = 0
+    cad4.HitsThisMission = 0
+    cad5.HitsThisMission = 0
+    cad6.HitsThisMission = 0
+
     cad1.Eliminated = false
     cad2.Eliminated = false
     cad3.Eliminated = false
@@ -232,489 +237,563 @@ describe('Air Mission Schmatic', () => {
     cad5.Hits = 0
     cad6.Hits = 0
   })
+  describe('Air Mission', () => {
+    test('Air Mission Preliminary Procedure', async () => {
+      const taskForceOptions1: TaskForceOptions = {
+        side: Side.Japan,
+        taskForceId: 1,
+        core: [akagi, kaga, hiryu],
+        screen: [tone, kagero]
+      }
+      const taskForce1 = new TaskForce(taskForceOptions1)
+      const carrierAirUnits1 = taskForce1.AirUnits
 
-  test('Air Mission Preliminary Procedure', async () => {
-    const taskForceOptions1: TaskForceOptions = {
-      side: Side.Japan,
-      taskForceId: 1,
-      core: [akagi, kaga, hiryu],
-      screen: [tone, kagero]
-    }
-    const taskForce1 = new TaskForce(taskForceOptions1)
-    const carrierAirUnits1 = taskForce1.AirUnits
+      const taskForceOptions2: TaskForceOptions = {
+        side: Side.Japan,
+        taskForceId: 2,
+        core: [soryu, shokaku, zuikaku],
+        screen: [hiei, kirishima]
+      }
+      const taskForce2 = new TaskForce(taskForceOptions2)
+      const carrierAirUnits2 = taskForce2.AirUnits
 
-    const taskForceOptions2: TaskForceOptions = {
-      side: Side.Japan,
-      taskForceId: 2,
-      core: [soryu, shokaku, zuikaku],
-      screen: [hiei, kirishima]
-    }
-    const taskForce2 = new TaskForce(taskForceOptions2)
-    const carrierAirUnits2 = taskForce2.AirUnits
+      const missionAirUnits = carrierAirUnits1.concat(carrierAirUnits2)
+      expect(missionAirUnits.length).toBe(6)
 
-    const missionAirUnits = carrierAirUnits1.concat(carrierAirUnits2)
-    expect(missionAirUnits.length).toBe(6)
+      const airMissionOptions: AirMissionSchematicOptions = {
+        airMissionType: AirMissionType.AirStrike,
+        missionAirUnits: missionAirUnits,
+        startHex: new Hex(3159),
+        targetHex: new Hex(2860)
+      }
+      airMission = new ES1AirMissionSchematic(airMissionOptions)
+      const minLevel = airMission.getLowestStatusLevelOfMissionAirUnits()
+      expect(minLevel).toBe(2)
 
-    const airMissionOptions: AirMissionSchematicOptions = {
-      airMissionType: AirMissionType.AirStrike,
-      missionAirUnits: missionAirUnits,
-      startHex: new Hex(3159),
-      targetHex: new Hex(2860)
-    }
-    airMission = new ES1AirMissionSchematic(airMissionOptions)
-    const minLevel = airMission.getLowestStatusLevelOfMissionAirUnits()
-    expect(minLevel).toBe(2)
+      let coordinated = airMission.isCoordinated(4)
+      expect(coordinated).toBe(true)
+      coordinated = airMission.isCoordinated(7)
+      expect(coordinated).toBe(false)
+    })
 
-    let coordinated = airMission.isCoordinated(4)
-    expect(coordinated).toBe(true)
-    coordinated = airMission.isCoordinated(7)
-    expect(coordinated).toBe(false)
+    test('Air Mission Designate Strike Targets in Force containing air and naval units', async () => {
+      setUpOahuForce()
+
+      const missionAirUnits = [cad1, cad2, cad3, cad4, cad5, cad6]
+
+      const airMissionOptions: AirMissionSchematicOptions = {
+        airMissionType: AirMissionType.AirStrike,
+        missionAirUnits: missionAirUnits,
+        startHex: new Hex(3159),
+        targetHex: new Hex(2860)
+      }
+      airMission = new ES1AirMissionSchematic(airMissionOptions)
+
+      const battleshipsAtTarget = force.NavalUnits.filter((unit) => unit.Id.startsWith('BB'))
+
+      airStrikeTargets = airMission.allocateStrikeTargets(missionAirUnits, force.AirUnits, battleshipsAtTarget)
+      expect(airStrikeTargets.length).toBe(6)
+    })
+
+    test('Resolve Air Strike vs Naval Unit', async () => {
+      california = Main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'BB10')
+      california.Hits = 0
+
+      const ships = [california]
+
+      const options: AirStrikeTargetOptions = {
+        attacker: cad1,
+        combatType: AirNavalCombatType.FAirvsNaval,
+        navalTargets: ships
+      }
+      const airStrike = new AirStrikeTarget(options)
+      const airMissionOptions: AirMissionSchematicOptions = {
+        airMissionType: AirMissionType.AirStrike,
+        missionAirUnits: missionAirUnits,
+        startHex: new Hex(3159),
+        targetHex: new Hex(2860)
+      }
+      airMission = new ES1AirMissionSchematic(airMissionOptions)
+      airMission.FirstAttack = false
+      airMission.resolveAirStrikesvsNaval(airStrike, 5, 0)
+
+      expect(california.Hits).toBe(2)
+
+      // test critical hit on first strike
+      california.Hits = 0
+      airMission.FirstAttack = true
+      airMission.resolveAirStrikesvsNaval(airStrike, 0, 9)
+      expect(california.Hits).toBe(14)
+    })
+
+    test('Resolve Strafe vs Unalerted (Grounded) Air Unit', async () => {
+      const pg18 = Main.Mapper.getUnitById<AirUnit>(Side.Allied, '18th Pursuit Group')
+      pg18.Steps = 6
+
+      const options: AirStrikeTargetOptions = {
+        attacker: cad1,
+        combatType: AirNavalCombatType.AirvsUnalertedAir,
+        airTarget: pg18
+      }
+      const airStrike = new AirStrikeTarget(options)
+
+      const airMissionOptions: AirMissionSchematicOptions = {
+        airMissionType: AirMissionType.AirStrike,
+        missionAirUnits: missionAirUnits,
+        startHex: new Hex(3159),
+        targetHex: new Hex(2860)
+      }
+      airMission = new ES1AirMissionSchematic(airMissionOptions)
+
+      airMission.FirstAttack = false
+      airMission.resolveStrafevsUnalertedAir(airStrike, 1)
+
+      expect(pg18.Hits).toBe(6)
+      expect(pg18.Steps).toBe(0)
+      expect(pg18.Eliminated).toBe(true)
+
+      resetAirUnitHits()
+    })
   })
+  describe('Air-to-Air Combat', () => {
+    test('Japanese Anti-Air Strength Modification', async () => {
+      const missionAirUnits = [cad1, cad2, cad3, cad4, cad5, cad6]
 
-  test('Air Mission Designate Strike Targets in Force containing air and naval units', async () => {
-    setUpOahuForce()
+      const airMissionOptions: AirMissionSchematicOptions = {
+        airMissionType: AirMissionType.AirStrike,
+        missionAirUnits: missionAirUnits,
+        startHex: new Hex(3159),
+        targetHex: new Hex(2860)
+      }
+      airMission = new ES1AirMissionSchematic(airMissionOptions)
+      const capUnit = cad5
+      const drm = airMission.getAntiAirStrengthModifier(missionAirUnits, capUnit)
+      expect(drm).toBe(8)
+    })
 
-    const missionAirUnits = [cad1, cad2, cad3, cad4, cad5, cad6]
+    test('US Anti-Air Strength Modification', async () => {
+      const defendingAirUnits = [maw2, pg18, pg15, bg11, bg5]
+      const airMissionOptions: AirMissionSchematicOptions = {
+        airMissionType: AirMissionType.AirStrike,
+        missionAirUnits: [], // not needed in this test
+        startHex: new Hex(3159),
+        targetHex: new Hex(2860)
+      }
+      airMission = new ES1AirMissionSchematic(airMissionOptions)
+      const escortUnit = maw2
+      const drm = airMission.getAntiAirStrengthModifier(defendingAirUnits, escortUnit)
 
-    const airMissionOptions: AirMissionSchematicOptions = {
-      airMissionType: AirMissionType.AirStrike,
-      missionAirUnits: missionAirUnits,
-      startHex: new Hex(3159),
-      targetHex: new Hex(2860)
-    }
-    airMission = new ES1AirMissionSchematic(airMissionOptions)
+      expect(drm).toBe(0)
+    })
 
-    const battleshipsAtTarget = force.NavalUnits.filter((unit) => unit.Id.startsWith('BB'))
+    test('Resolve CAP vs Detected Air Strike Mission against Force', async () => {
+      // set up Pearl Harbor base and air units
+      setUpOahuForce()
+      setUpJapanesAirStrike()
 
-    airStrikeTargets = airMission.allocateStrikeTargets(missionAirUnits, force.AirUnits, battleshipsAtTarget)
-    expect(airStrikeTargets.length).toBe(6)
+      const airMission = new ES1AirMissionSchematic(airMissionOptions)
+      const minLevel = airMission.getLowestStatusLevelOfMissionAirUnits()
+      expect(minLevel).toBe(2)
+
+      let coordinated = airMission.isCoordinated(4)
+      expect(coordinated).toBe(true)
+
+      // assume detected - alert air units up to value of base
+      const base = force.BaseUnit
+      expect(base?.Name).toBe('Oahu')
+      expect(base?.LaunchCapacity).toBe(18)
+      const defendingAirUnits = force.AirUnits
+
+      expect(defendingAirUnits.length).toBe(6)
+
+      // select highest value air unit -> suggestion maximum of anti-air value of F units
+      // or just set one in this test?
+      // get the highest aa strength of the Allied fighter units
+
+      const capUnit = airMission.getCAPUnit()
+
+      if (!capUnit) {
+        throw Error('No CAP Unit found')
+      }
+      expect(capUnit.Id).toBe('18th Pursuit Group')
+      expect(capUnit.AAStrength).toBe(4)
+
+      const otherUnits = airMission.getOtherAirUnits(defendingAirUnits, capUnit)
+      expect(otherUnits.length).toBe(5)
+
+      const defendingDrm = airMission.getAntiAirStrengthModifier(defendingAirUnits, capUnit)
+      expect(defendingDrm).toBe(0)
+
+      // do the same for the attacking strike escort units
+      const escortUnit = airMission.getEscortUnit(true)
+
+      if (!escortUnit) {
+        throw Error('No Escort Unit found')
+      }
+      expect(escortUnit.Id).toBe('CAD6')
+      expect(escortUnit.AAStrength).toBe(7)
+
+      const attackingDrm = airMission.getAntiAirStrengthModifier(missionAirUnits, escortUnit)
+      expect(attackingDrm).toBe(8)
+
+      // resolve air combat (simultaneous attacks)
+      const airCombatOptions: AirCombatOptions = {
+        coordinated: true,
+        attackingUnits: missionAirUnits,
+        defendingUnits: defendingAirUnits,
+        capUnit: capUnit,
+        escortUnit: escortUnit
+      }
+
+      const capvsEscortDieRoll = 0
+      const escortvsCapDieRoll = 7
+
+      const { hitsvsCap, hitsvsEscort } = airMission.capvsEscortAirUnits(
+        airCombatOptions,
+        capvsEscortDieRoll,
+        escortvsCapDieRoll
+      )
+      expect(hitsvsEscort).toBe(2)
+      expect(hitsvsCap).toBe(4)
+    })
+
+    test('Allocate Hits amongst Mission Units', () => {
+      // set up Pearl Harbor base and air units
+      setUpOahuForce()
+      setUpJapanesAirStrike()
+
+      const airMission = new ES1AirMissionSchematic(airMissionOptions)
+      const minLevel = airMission.getLowestStatusLevelOfMissionAirUnits()
+      expect(minLevel).toBe(2)
+
+      let coordinated = airMission.isCoordinated(4)
+      expect(coordinated).toBe(true)
+
+      // assume detected - alert air units up to value of base
+      const base = force.BaseUnit
+      expect(base?.Name).toBe('Oahu')
+      expect(base?.LaunchCapacity).toBe(18)
+      const defendingAirUnits = force.AirUnits
+
+      expect(defendingAirUnits.length).toBe(6)
+
+      // select highest value air unit -> suggestion maximum of anti-air value of F units
+      // or just set one in this test?
+      // get the highest aa strength of the Allied fighter units
+
+      const capUnit = airMission.getCAPUnit()
+
+      if (!capUnit) {
+        throw Error('No CAP Unit found')
+      }
+
+      // do the same for the attacking strike escort units
+      const escortUnit = airMission.getEscortUnit(true)
+
+      if (!escortUnit) {
+        throw Error('No Escort Unit found')
+      }
+
+      // resolve air combat (simultaneous attacks)
+      const airCombatOptions: AirCombatOptions = {
+        coordinated: true,
+        attackingUnits: missionAirUnits,
+        defendingUnits: defendingAirUnits,
+        capUnit: capUnit,
+        escortUnit: escortUnit
+      }
+
+      airMission.allocateAirCombatHits({ hitsvsEscort: 9, hitsvsCap: 3 }, airCombatOptions)
+
+      expect(escortUnit.Id).toBe('CAD6')
+      expect(escortUnit.Steps).toBe(4)
+      expect(escortUnit.HitsThisMission).toBe(2)
+      expect(escortUnit.Aborted).toBe(true)
+      expect(cad5.Steps).toBe(4)
+      expect(cad5.HitsThisMission).toBe(2)
+      expect(cad5.Aborted).toBe(true)
+      expect(cad1.Steps).toBe(3)
+      expect(cad1.Aborted).toBe(true)
+      expect(cad2.Steps).toBe(3)
+      expect(cad2.Aborted).toBe(true)
+      expect(cad3.Steps).toBe(3)
+      expect(cad3.HitsThisMission).toBe(1)
+      expect(cad3.Aborted).toBe(false)
+      expect(cad4.Steps).toBe(4)
+      expect(cad4.HitsThisMission).toBe(0)
+      expect(cad4.Aborted).toBe(false)
+
+      resetAirUnitHits()
+      airMission.allocateAirCombatHits({ hitsvsEscort: 26, hitsvsCap: 0 }, airCombatOptions)
+      expect(escortUnit.Steps).toBe(0)
+      expect(escortUnit.Eliminated).toBe(true)
+      expect(cad5.Steps).toBe(2)
+      expect(cad5.Aborted).toBe(true)
+      expect(cad1.Steps).toBe(1)
+      expect(cad1.Aborted).toBe(true)
+      expect(cad2.Steps).toBe(1)
+      expect(cad2.Aborted).toBe(true)
+      expect(cad3.Steps).toBe(0)
+      expect(cad3.Aborted).toBe(true)
+      expect(cad4.Steps).toBe(0)
+      expect(cad4.Aborted).toBe(true)
+
+      resetAirUnitHits()
+      airMission.allocateAirCombatHits({ hitsvsEscort: 36, hitsvsCap: 0 }, airCombatOptions)
+      expect(escortUnit.Steps).toBe(0)
+      expect(escortUnit.Eliminated).toBe(true)
+      expect(cad5.Steps).toBe(0)
+      expect(cad5.Eliminated).toBe(true)
+      expect(cad1.Steps).toBe(0)
+      expect(cad1.Eliminated).toBe(true)
+      expect(cad2.Steps).toBe(0)
+      expect(cad2.Eliminated).toBe(true)
+      expect(cad3.Steps).toBe(0)
+      expect(cad3.Eliminated).toBe(true)
+      expect(cad4.Steps).toBe(0)
+      expect(cad4.Eliminated).toBe(true)
+    })
+
+    test('Allocate Hits amongst CAP Units', () => {
+      setUpJapanesAirStrike()
+
+      pg18 = Main.Mapper.getUnitById<AirUnit>(Side.Allied, '18th Pursuit Group')
+      maw2 = Main.Mapper.getUnitById<AirUnit>(Side.Allied, '2nd MAW')
+      oahuHex = new Hex(2860)
+      resetAirUnitHits()
+
+      const forceOptions = {
+        side: Side.Allied,
+        forceId: 1,
+        units: [oahuBase, pg18, maw2],
+        location: oahuHex
+      }
+
+      force = new Force(forceOptions)
+      oahuHex.addForceToHex(force)
+      const airMissionOptions: AirMissionSchematicOptions = {
+        airMissionType: AirMissionType.AirStrike,
+        missionAirUnits: missionAirUnits,
+        startHex: hex,
+        targetHex: oahuHex
+      }
+      const airMission = new ES1AirMissionSchematic(airMissionOptions)
+
+      const defendingAirUnits = force.AirUnits
+      expect(defendingAirUnits.length).toBe(2)
+
+      // select highest value air unit -> suggestion maximum of anti-air value of F units
+      // or just set one in this test?
+      // get the highest aa strength of the Allied fighter units
+
+      const capUnit = airMission.getCAPUnit()
+
+      if (!capUnit) {
+        throw Error('No CAP Unit found')
+      }
+      expect(capUnit.Id).toBe('2nd MAW')
+      // resolve air combat (simultaneous attacks)
+      const airCombatOptions: AirCombatOptions = {
+        coordinated: true,
+        attackingUnits: missionAirUnits,
+        defendingUnits: defendingAirUnits,
+        capUnit: capUnit,
+        escortUnit: undefined
+      }
+
+      resetAirUnitHits()
+
+      airMission.allocateAirCombatHits({ hitsvsEscort: 0, hitsvsCap: 1 }, airCombatOptions)
+      expect(maw2.Hits).toBe(3)
+      expect(maw2.Steps).toBe(3)
+      expect(pg18.Hits).toBe(0)
+      expect(pg18.Steps).toBe(6)
+
+      resetAirUnitHits()
+
+      airMission.allocateAirCombatHits({ hitsvsEscort: 0, hitsvsCap: 5 }, airCombatOptions)
+      expect(maw2.Hits).toBe(5) // starts with 2 hits
+      expect(maw2.Steps).toBe(1)
+      expect(pg18.Hits).toBe(2)
+      expect(pg18.Steps).toBe(4)
+
+      // test situation where insufficient steps to allocate all hits
+      resetAirUnitHits()
+
+      airMission.allocateAirCombatHits({ hitsvsEscort: 0, hitsvsCap: 20 }, airCombatOptions)
+      expect(maw2.Hits).toBe(6)
+      expect(maw2.Steps).toBe(0)
+      expect(pg18.Hits).toBe(6)
+      expect(pg18.Steps).toBe(0)
+    })
+
+    test('Resolve CAP vs Detected Air Strike Mission against multiple Task Forces', async () => {
+      createJapaneseTaskForces()
+      resetAirUnitHits()
+
+      const missionAirUnits = [pg18, pg15, bg11, bg5]
+
+      const airMissionOptions: AirMissionSchematicOptions = {
+        airMissionType: AirMissionType.AirStrike,
+        missionAirUnits: missionAirUnits,
+        startHex: oahuHex,
+        targetHex: hex
+      }
+      const airMission = new ES1AirMissionSchematic(airMissionOptions)
+      // get all air units from defending TFs (we assume the air strike was detected)
+      const capAirUnits = hex.CapAirUnits
+      expect(capAirUnits.length).toBe(6)
+
+      let coordinated = airMission.isCoordinated(0)
+      expect(coordinated).toBe(true)
+
+      const minLevel = airMission.getLowestStatusLevelOfMissionAirUnits()
+      expect(minLevel).toBe(0)
+
+      const defendingAirUnits = hex.CapAirUnits
+
+      const capUnit = airMission.getCAPUnit()
+
+      if (!capUnit) {
+        throw Error('No CAP Unit found')
+      }
+      expect(capUnit.Id).toBe('CAD6')
+      expect(capUnit.AAStrength).toBe(7)
+
+      // do the same for the attacking strike escort units
+      const escortUnit = airMission.getEscortUnit(true)
+      if (!escortUnit) {
+        throw Error('No CAP Unit found')
+      }
+      expect(escortUnit.Id).toBe('18th Pursuit Group')
+      expect(escortUnit.AAStrength).toBe(4)
+
+      const airCombatOptions: AirCombatOptions = {
+        coordinated: true,
+        attackingUnits: missionAirUnits,
+        defendingUnits: defendingAirUnits,
+        capUnit: capUnit,
+        escortUnit: escortUnit
+      }
+
+      const capvsEscortDieRoll = 9
+      const escortvsCapDieRoll = 0
+
+      const { hitsvsCap, hitsvsEscort } = airMission.capvsEscortAirUnits(
+        airCombatOptions,
+        capvsEscortDieRoll,
+        escortvsCapDieRoll
+      )
+      expect(hitsvsEscort).toBe(3)
+      expect(hitsvsCap).toBe(2)
+    })
+
+    test('Resolve CAP vs Detected Air Strike Mission against Task Force and Force in same hex', async () => {})
   })
-
-  test('Resolve Air Strike vs Naval Unit', async () => {
-    california = Main.Mapper.getUnitById<NavalUnit>(Side.Allied, 'BB10')
-    california.Hits = 0
-    
-    const ships = [california]
-
-    const options: AirStrikeTargetOptions = {
-      attacker: cad1,
-      combatType: AirNavalCombatType.FAirvsNaval,
-      navalTargets: ships
-    }
-    const airStrike = new AirStrikeTarget(options)
-    const airMissionOptions: AirMissionSchematicOptions = {
-      airMissionType: AirMissionType.AirStrike,
-      missionAirUnits: missionAirUnits,
-      startHex: new Hex(3159),
-      targetHex: new Hex(2860)
-    }
-    airMission = new ES1AirMissionSchematic(airMissionOptions)
-    airMission.FirstAttack = false
-    airMission.resolveAirStrikesvsNaval(airStrike, 5, 0)
-
-    expect(california.Hits).toBe(2)
-
-    // test critical hit on first strike
-    california.Hits = 0
-    airMission.FirstAttack = true
-    airMission.resolveAirStrikesvsNaval(airStrike, 0, 9)
-    expect(california.Hits).toBe(14)
-  })
-
-  test('Resolve Strafe vs Unalerted (Grounded) Air Unit', async () => {
-    const pg18 = Main.Mapper.getUnitById<AirUnit>(Side.Allied, '18th Pursuit Group')
-    pg18.Steps = 6
-
-    const options: AirStrikeTargetOptions = {
-      attacker: cad1,
-      combatType: AirNavalCombatType.AirvsUnalertedAir,
-      airTarget: pg18
-    }
-    const airStrike = new AirStrikeTarget(options)
-
-    const airMissionOptions: AirMissionSchematicOptions = {
-      airMissionType: AirMissionType.AirStrike,
-      missionAirUnits: missionAirUnits,
-      startHex: new Hex(3159),
-      targetHex: new Hex(2860)
-    }
-    airMission = new ES1AirMissionSchematic(airMissionOptions)
-
-    airMission.FirstAttack = false
-    airMission.resolveStrafevsUnalertedAir(airStrike, 1)
-
-    expect(pg18.Hits).toBe(6)
-    expect(pg18.Steps).toBe(0)
-    expect(pg18.Eliminated).toBe(true)
-
-    resetAirUnitHits()
-  })
-
-  test('Japanese Anti-Air Strength Modification', async () => {
-    const missionAirUnits = [cad1, cad2, cad3, cad4, cad5, cad6]
-
-    const airMissionOptions: AirMissionSchematicOptions = {
-      airMissionType: AirMissionType.AirStrike,
-      missionAirUnits: missionAirUnits,
-      startHex: new Hex(3159),
-      targetHex: new Hex(2860)
-    }
-    airMission = new ES1AirMissionSchematic(airMissionOptions)
-    const capUnit = cad5
-    const drm = airMission.getAntiAirStrengthModifier(missionAirUnits, capUnit)
-    expect(drm).toBe(8)
-  })
-
-  test('US Anti-Air Strength Modification', async () => {
-    const defendingAirUnits = [maw2, pg18, pg15, bg11, bg5]
-    const airMissionOptions: AirMissionSchematicOptions = {
-      airMissionType: AirMissionType.AirStrike,
-      missionAirUnits: [], // not needed in this test
-      startHex: new Hex(3159),
-      targetHex: new Hex(2860)
-    }
-    airMission = new ES1AirMissionSchematic(airMissionOptions)
-    const escortUnit = maw2
-    const drm = airMission.getAntiAirStrengthModifier(defendingAirUnits, escortUnit)
-
-    expect(drm).toBe(0)
-  })
-
-  test('Resolve CAP vs Detected Air Strike Mission against Force', async () => {
-    // set up Pearl Harbor base and air units
-    setUpOahuForce()
-    setUpJapanesAirStrike()
-
-    const airMission = new ES1AirMissionSchematic(airMissionOptions)
-    const minLevel = airMission.getLowestStatusLevelOfMissionAirUnits()
-    expect(minLevel).toBe(2)
-
-    let coordinated = airMission.isCoordinated(4)
-    expect(coordinated).toBe(true)
-
-    // assume detected - alert air units up to value of base
-    const base = force.BaseUnit
-    expect(base?.Name).toBe('Oahu')
-    expect(base?.LaunchCapacity).toBe(18)
-    const defendingAirUnits = force.AirUnits
-
-    expect(defendingAirUnits.length).toBe(6)
-
-    // select highest value air unit -> suggestion maximum of anti-air value of F units
-    // or just set one in this test?
-    // get the highest aa strength of the Allied fighter units
-
-    const capUnit = airMission.getCAPUnit()
-
-    if (!capUnit) {
-      throw Error('No CAP Unit found')
-    }
-    expect(capUnit.Id).toBe('18th Pursuit Group')
-    expect(capUnit.AAStrength).toBe(4)
-
-    const otherUnits = airMission.getOtherAirUnits(defendingAirUnits, capUnit)
-    expect(otherUnits.length).toBe(5)
-
-    const defendingDrm = airMission.getAntiAirStrengthModifier(defendingAirUnits, capUnit)
-    expect(defendingDrm).toBe(0)
-
-    // do the same for the attacking strike escort units
-    const escortUnit = airMission.getEscortUnit(true)
-
-    if (!escortUnit) {
-      throw Error('No Escort Unit found')
-    }
-    expect(escortUnit.Id).toBe('CAD6')
-    expect(escortUnit.AAStrength).toBe(7)
-
-    const attackingDrm = airMission.getAntiAirStrengthModifier(missionAirUnits, escortUnit)
-    expect(attackingDrm).toBe(8)
-
-    // resolve air combat (simultaneous attacks)
-    const airCombatOptions: AirCombatOptions = {
-      coordinated: true,
-      attackingUnits: missionAirUnits,
-      defendingUnits: defendingAirUnits,
-      capUnit: capUnit,
-      escortUnit: escortUnit
-    }
-
-    const capvsEscortDieRoll = 0
-    const escortvsCapDieRoll = 7
-
-    const { hitsvsCap, hitsvsEscort } = airMission.capvsEscortAirUnits(
-      airCombatOptions,
-      capvsEscortDieRoll,
-      escortvsCapDieRoll
-    )
-    expect(hitsvsEscort).toBe(2)
-    expect(hitsvsCap).toBe(4)
-  })
-
-  test('Allocate Hits amongst Mission Units', () => {
-    // set up Pearl Harbor base and air units
-    setUpOahuForce()
-    setUpJapanesAirStrike()
-
-    const airMission = new ES1AirMissionSchematic(airMissionOptions)
-    const minLevel = airMission.getLowestStatusLevelOfMissionAirUnits()
-    expect(minLevel).toBe(2)
-
-    let coordinated = airMission.isCoordinated(4)
-    expect(coordinated).toBe(true)
-
-    // assume detected - alert air units up to value of base
-    const base = force.BaseUnit
-    expect(base?.Name).toBe('Oahu')
-    expect(base?.LaunchCapacity).toBe(18)
-    const defendingAirUnits = force.AirUnits
-
-    expect(defendingAirUnits.length).toBe(6)
-
-    // select highest value air unit -> suggestion maximum of anti-air value of F units
-    // or just set one in this test?
-    // get the highest aa strength of the Allied fighter units
-
-    const capUnit = airMission.getCAPUnit()
-
-    if (!capUnit) {
-      throw Error('No CAP Unit found')
-    }
-
-    // do the same for the attacking strike escort units
-    const escortUnit = airMission.getEscortUnit(true)
-
-    if (!escortUnit) {
-      throw Error('No Escort Unit found')
-    }
-
-    // resolve air combat (simultaneous attacks)
-    const airCombatOptions: AirCombatOptions = {
-      coordinated: true,
-      attackingUnits: missionAirUnits,
-      defendingUnits: defendingAirUnits,
-      capUnit: capUnit,
-      escortUnit: escortUnit
-    }
-
-    airMission.allocateAirCombatHits({ hitsvsEscort: 9, hitsvsCap: 3 }, airCombatOptions)
-
-    expect(escortUnit.Id).toBe('CAD6')
-    expect(escortUnit.Steps).toBe(4)
-    expect(escortUnit.Aborted).toBe(true)
-    expect(cad5.Steps).toBe(4)
-    expect(cad5.Aborted).toBe(true)
-    expect(cad1.Steps).toBe(3)
-    expect(cad1.Aborted).toBe(true)
-    expect(cad2.Steps).toBe(3)
-    expect(cad2.Aborted).toBe(true)
-    expect(cad3.Steps).toBe(3)
-    expect(cad3.Aborted).toBe(false)
-    expect(cad4.Steps).toBe(4)
-    expect(cad4.Aborted).toBe(false)
-
-    resetAirUnitHits()
-    airMission.allocateAirCombatHits({ hitsvsEscort: 26, hitsvsCap: 0 }, airCombatOptions)
-    expect(escortUnit.Steps).toBe(0)
-    expect(escortUnit.Eliminated).toBe(true)
-    expect(cad5.Steps).toBe(2)
-    expect(cad5.Aborted).toBe(true)
-    expect(cad1.Steps).toBe(1)
-    expect(cad1.Aborted).toBe(true)
-    expect(cad2.Steps).toBe(1)
-    expect(cad2.Aborted).toBe(true)
-    expect(cad3.Steps).toBe(0)
-    expect(cad3.Aborted).toBe(true)
-    expect(cad4.Steps).toBe(0)
-    expect(cad4.Aborted).toBe(true)
-
-    resetAirUnitHits()
-    airMission.allocateAirCombatHits({ hitsvsEscort: 36, hitsvsCap: 0 }, airCombatOptions)
-    expect(escortUnit.Steps).toBe(0)
-    expect(escortUnit.Eliminated).toBe(true)
-    expect(cad5.Steps).toBe(0)
-    expect(cad5.Eliminated).toBe(true)
-    expect(cad1.Steps).toBe(0)
-    expect(cad1.Eliminated).toBe(true)
-    expect(cad2.Steps).toBe(0)
-    expect(cad2.Eliminated).toBe(true)
-    expect(cad3.Steps).toBe(0)
-    expect(cad3.Eliminated).toBe(true)
-    expect(cad4.Steps).toBe(0)
-    expect(cad4.Eliminated).toBe(true)
-  })
-
-  test('Allocate Hits amongst CAP Units', () => {
-    setUpJapanesAirStrike()
-
-    pg18 = Main.Mapper.getUnitById<AirUnit>(Side.Allied, '18th Pursuit Group')
-    maw2 = Main.Mapper.getUnitById<AirUnit>(Side.Allied, '2nd MAW')
-    oahuHex = new Hex(2860)
-    resetAirUnitHits()
-
-    const forceOptions = {
-      side: Side.Allied,
-      forceId: 1,
-      units: [oahuBase, pg18, maw2],
-      location: oahuHex
-    }
-
-    force = new Force(forceOptions)
-    oahuHex.addForceToHex(force)
-    const airMissionOptions: AirMissionSchematicOptions = {
-      airMissionType: AirMissionType.AirStrike,
-      missionAirUnits: missionAirUnits,
-      startHex: hex,
-      targetHex: oahuHex
-    }
-    const airMission = new ES1AirMissionSchematic(airMissionOptions)
-
-    const defendingAirUnits = force.AirUnits
-    expect(defendingAirUnits.length).toBe(2)
-
-    // select highest value air unit -> suggestion maximum of anti-air value of F units
-    // or just set one in this test?
-    // get the highest aa strength of the Allied fighter units
-
-    const capUnit = airMission.getCAPUnit()
-
-    if (!capUnit) {
-      throw Error('No CAP Unit found')
-    }
-    expect(capUnit.Id).toBe('2nd MAW')
-    // resolve air combat (simultaneous attacks)
-    const airCombatOptions: AirCombatOptions = {
-      coordinated: true,
-      attackingUnits: missionAirUnits,
-      defendingUnits: defendingAirUnits,
-      capUnit: capUnit,
-      escortUnit: undefined
-    }
-
-    resetAirUnitHits()
-
-    airMission.allocateAirCombatHits({ hitsvsEscort: 0, hitsvsCap: 1 }, airCombatOptions)
-    expect(maw2.Hits).toBe(3)
-    expect(maw2.Steps).toBe(3)
-    expect(pg18.Hits).toBe(0)
-    expect(pg18.Steps).toBe(6)
-    
-    resetAirUnitHits()
-
-    airMission.allocateAirCombatHits({ hitsvsEscort: 0, hitsvsCap: 5 }, airCombatOptions)
-    expect(maw2.Hits).toBe(5)
-    expect(maw2.Steps).toBe(1)
-    expect(pg18.Hits).toBe(2)
-    expect(pg18.Steps).toBe(4)
-
-    // test situation where insufficient steps to allocate all hits
-    resetAirUnitHits()
-
-    airMission.allocateAirCombatHits({ hitsvsEscort: 0, hitsvsCap: 15 }, airCombatOptions)
-    expect(maw2.Hits).toBe(6)
-    expect(maw2.Steps).toBe(0)
-    expect(pg18.Hits).toBe(6)
-    expect(pg18.Steps).toBe(0)
-
-  })
-
-  test('Resolve CAP vs Detected Air Strike Mission against multiple Task Forces', async () => {
-    createJapaneseTaskForces()
-    resetAirUnitHits()
-
-    const missionAirUnits = [pg18, pg15, bg11, bg5]
-
-    const airMissionOptions: AirMissionSchematicOptions = {
-      airMissionType: AirMissionType.AirStrike,
-      missionAirUnits: missionAirUnits,
-      startHex: oahuHex,
-      targetHex: hex
-    }
-    const airMission = new ES1AirMissionSchematic(airMissionOptions)
-    // get all air units from defending TFs (we assume the air strike was detected)
-    const capAirUnits = hex.CapAirUnits
-    expect(capAirUnits.length).toBe(6)
-
-    let coordinated = airMission.isCoordinated(0)
-    expect(coordinated).toBe(true)
-
-    const minLevel = airMission.getLowestStatusLevelOfMissionAirUnits()
-    expect(minLevel).toBe(0)
-
-    const defendingAirUnits = hex.CapAirUnits
-
-    const capUnit = airMission.getCAPUnit()
-
-    if (!capUnit) {
-      throw Error('No CAP Unit found')
-    }
-    expect(capUnit.Id).toBe('CAD6')
-    expect(capUnit.AAStrength).toBe(7)
-
-    // do the same for the attacking strike escort units
-    const escortUnit = airMission.getEscortUnit(true)
-    if (!escortUnit) {
-      throw Error('No CAP Unit found')
-    }
-    expect(escortUnit.Id).toBe('18th Pursuit Group')
-    expect(escortUnit.AAStrength).toBe(4)
-
-    const airCombatOptions: AirCombatOptions = {
-      coordinated: true,
-      attackingUnits: missionAirUnits,
-      defendingUnits: defendingAirUnits,
-      capUnit: capUnit,
-      escortUnit: escortUnit
-    }
-
-    const capvsEscortDieRoll = 9
-    const escortvsCapDieRoll = 0
-
-    const { hitsvsCap, hitsvsEscort } = airMission.capvsEscortAirUnits(
-      airCombatOptions,
-      capvsEscortDieRoll,
-      escortvsCapDieRoll
-    )
-    expect(hitsvsEscort).toBe(3)
-    expect(hitsvsCap).toBe(2)
-  })
-
-  test('Resolve CAP vs Detected Air Strike Mission against Task Force and Force in same hex', async () => {})
-
-  test('Resolve Flak vs (Detected) Air Strike against Force', async () => {
-    setUpOahuForce()
-    setUpJapanesAirStrike()
-
-    const airMission = new ES1AirMissionSchematic(airMissionOptions)
-
-    // do the same for the attacking strike escort units
-    const escortUnit = airMission.getEscortUnit(true)
-
-    if (!escortUnit) {
-      throw Error('No Escort Unit found')
-    }
-
-    // assume escort unit is aborted following air combat
-    escortUnit.Aborted = true
-
-    // 1. Which units can fire: this will be air strike against base including non-activated naval units
-    // All ground units + 4 naval units + Base can conduct flak
-    const flakUnits = airMission.determineFlakUnits(force)
-
-    expect(flakUnits.length).toBe(5) // 4 naval units + baseUnit
-
-    // 2. Determine Anti-Strength of above units
-    const flakStrength = airMission.calculateFlakStrength(flakUnits)
-    expect(flakStrength).toBe(15)
-
-    // 3. Use normal flak line of combat results table
-    const result = await airMission.getFlakHits(flakStrength, 6)
-    expect(result.hits).toBe(2)
-
-    // 4. Allocate Hits
-  })
-
-  test('Resolve Flak vs Air Strike against Task Forces', async () => {
-    // US strike against Japanese TFs. Assume no air units took any hits in air combat vs CAP
+  describe('Flak', () => {
+    test('Resolve Flak vs (Detected) Air Strike against Force', async () => {
+      setUpOahuForce()
+      setUpJapanesAirStrike()
+
+      const airMission = new ES1AirMissionSchematic(airMissionOptions)
+
+      // do the same for the attacking strike escort units
+      const escortUnit = airMission.getEscortUnit(true)
+
+      if (!escortUnit) {
+        throw Error('No Escort Unit found')
+      }
+
+      // assume escort unit is aborted following air combat
+      escortUnit.Aborted = true
+
+      // 1. Which units can fire: this will be air strike against base including non-activated naval units
+      // All ground units + 4 naval units + Base can conduct flak
+      const flakUnits = airMission.determineFlakUnits()
+
+      expect(flakUnits.length).toBe(5) // 4 naval units + baseUnit
+
+      // 2. Determine Anti-Strength of above units
+      const flakStrength = airMission.calculateFlakStrength(flakUnits)
+      expect(flakStrength).toBe(10)
+
+      // 3. Use normal flak line of combat results table
+      const result = await airMission.getFlakHits(flakStrength, 6)
+      expect(result.hits).toBe(1)
+    })
+
+    test('Resolve Flak Hits', async () => {
+      setUpJapanesAirStrike()
+
+      const airMission = new ES1AirMissionSchematic(airMissionOptions)
+
+      // do the same for the attacking strike escort units
+      const escortUnit = airMission.getEscortUnit(true)
+
+      if (!escortUnit) {
+        throw Error('No Escort Unit found')
+      }
+      expect(escortUnit.Id).toBe('CAD6')
+
+      // assume escort unit is aborted following air combat
+      escortUnit.Hits = 2
+      escortUnit.HitsThisMission = 2
+      escortUnit.Aborted = true
+
+      // assume one of the other mission air units suffered one hit from air combat
+      cad5.Hits = 1
+      cad5.HitsThisMission = 1
+
+      const airCombatOptions: AirCombatOptions = {
+        coordinated: true,
+        attackingUnits: missionAirUnits,
+        defendingUnits: [],
+        capUnit: undefined,
+        escortUnit: escortUnit
+      }
+      airMission.allocateFlakHits(1, airCombatOptions)
+      expect(cad6.Hits).toBe(2)
+      expect(cad6.HitsThisMission).toBe(2)
+      expect(cad6.Aborted).toBe(true)
+
+      expect(cad5.Hits).toBe(2)
+      expect(cad5.HitsThisMission).toBe(2)
+      expect(cad5.Aborted).toBe(true)
+
+      resetAirUnitHits()
+      escortUnit.Hits = 2
+      escortUnit.HitsThisMission = 2
+      escortUnit.Aborted = true
+
+      // assume one of the other mission air units suffered one hit from air combat
+      cad5.Hits = 1
+      cad5.HitsThisMission = 1
+      airMission.allocateFlakHits(7, airCombatOptions)
+
+      // 1 hit to CAD5, 2 each to CAD1, CAD2, CAD3
+      expect(cad5.Hits).toBe(2)
+      expect(cad5.HitsThisMission).toBe(2)
+      expect(cad5.Aborted).toBe(true)
+
+      expect(cad1.Hits).toBe(3) // starts scenario with 1 hit
+      expect(cad1.HitsThisMission).toBe(2)
+      expect(cad1.Aborted).toBe(true)
+
+      expect(cad2.Hits).toBe(3)
+      expect(cad2.HitsThisMission).toBe(2)
+      expect(cad2.Aborted).toBe(true)
+
+      expect(cad3.Hits).toBe(4) // starts scenario with 2 hits
+      expect(cad3.HitsThisMission).toBe(2)
+      expect(cad3.Aborted).toBe(true)
+
+      expect(cad4.Hits).toBe(2) // starts scenario with 2 hits
+      expect(cad4.HitsThisMission).toBe(0)
+      expect(cad4.Aborted).toBe(false)
+    })
+
+    test('Resolve Flak vs Air Strike against Task Forces', async () => {
+      // US strike against Japanese TFs. Assume no air units took any hits in air combat vs CAP
+    })
   })
 })

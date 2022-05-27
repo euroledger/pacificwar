@@ -137,7 +137,6 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
 
     const airUnitsAttackingNaval = missionAirUnits.filter((el) => !airUnitsAttackingAir.includes(el))
 
-    console.log("******************* QUACk airUnitsAttackingNaval.length = ", airUnitsAttackingNaval.length)
     if (airUnitsAttackingNaval.length > 0) {
       // insert shokakuAirUnit at front so it fires first
       airUnitsAttackingNaval.splice(0, 0, shokakuAirGroup)
@@ -177,47 +176,82 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
       GameStatus.print(`\t\t\tResolve FLAK`)
       GameStatus.print('\t\t\t------------')
       GameStatus.print(`\t\t\t\t => No FLAK on battle cycle 1`) // Herman clarification, this differs from Strategic Scenario
-      GameStatus.print('\n')
       return undefined
     } else {
       return super.flakProcedure(options)
     }
   }
 
-  public allocateFlakHits(hits: number, options: AirCombatOptions) {
-    // allocate all hits to escort unit up to remaining hits/steps in the unit
-    let hitsStillToAllocate: number
-
-    // // if there is an escort unit, allocate as many hits as possible to that unit
-    // if (options.escortUnit) {
-    //   hitsStillToAllocate = hits - options.escortUnit.Steps
-    // }
-    // options.escortUnit.Hits = Math.min(6, options.escortUnit?.Hits + result.hitsvsEscort)
-    // if (result.hitsvsEscort >= 2) {
-    //   options.escortUnit.Aborted = true
-    // }
-    // // escort unit eliminated...distribute remaining hits amongst mission air units
-    // // sort mission air units by AA strength and allocate two hits per unit 9beginning with strongest)
-    // // until no more hits to allocate
-    // const otherUnits = options.attackingUnits.filter((unit) => unit.Id !== options.escortUnit?.Id)
-    // let units = otherUnits.sort((a, b) => b.AAStrength - a.AAStrength)
-
-    // while (hitsStillToAllocate > 0 && units.length > 0) {
-    //   const hitsOnThisUnit = Math.min(hitsStillToAllocate, Math.min(units[0].Steps, 2))
-    //   hitsStillToAllocate -= hitsOnThisUnit
-    //   units[0].Hits += hitsOnThisUnit
-
-    //   if (hitsOnThisUnit === 2) {
-    //     units[0].Aborted = true
-    //     units = units.filter((unit) => unit.Id !== units[0].Id)
-    //   }
-    // }
-    // const abortedStr = options.escortUnit.Aborted ? ' (ABORTED) ' : ''
-    // GameStatus.print(
-    //   `\n\t\t\tEscort Unit ${options.escortUnit.Id} now has ${options.escortUnit.Steps} steps${abortedStr}`
-    // )
+  private statusStr(unit: AirUnit): string {
+    return this.detected && unit.Eliminated ? ' (ELIMINATED) ' : this.detected && unit.Aborted ? '(ABORTED) ' : ''
   }
 
+  public allocateFlakHits(hits: number, options: AirCombatOptions) {
+    if (hits === 0) {
+      GameStatus.print(`\t\t\t\t => No hits to allocate`)
+      return
+    }
+    let hitsStillToAllocate = hits
+
+    // remove any eliminated or aborted units from the attackers
+    let otherUnits = options.attackingUnits.filter((unit) => unit.Eliminated === false && unit.Aborted === false)
+
+    // if any unit has one hit from CAP make that the first unit to take a (single) hit
+    const firstTarget = otherUnits.find((unit) => unit.HitsThisMission === 1)
+    if (firstTarget) {
+      firstTarget.Hits += 1
+      firstTarget.HitsThisMission += 1
+      firstTarget.Aborted = true
+      hitsStillToAllocate -= 1
+
+      GameStatus.print(
+        `\t\t\t\tAllocating 1 hit to ${firstTarget.Id} -> now has ${firstTarget.Hits} hits ${this.statusStr(
+          firstTarget
+        )}`
+      )
+    }
+
+    otherUnits = otherUnits.filter((unit) => unit.Id !== firstTarget?.Id)
+
+    // allocate remaining hits, two per unit, prioritising as follows:
+    // if the target contains a Force, use anti-air; if the target contains one or more Task Forces, use
+    // anti-naval
+
+    let units = this.prioritiseRemainingTargets(options)
+
+    while (hitsStillToAllocate > 0 && units.length > 0) {
+      const thisUnit = units[0]
+      const hitsOnThisUnit = Math.min(hitsStillToAllocate, thisUnit.Steps, 2)
+      hitsStillToAllocate -= hitsOnThisUnit
+      thisUnit.Hits += hitsOnThisUnit
+      thisUnit.HitsThisMission += hitsOnThisUnit
+
+      if (hitsOnThisUnit === 2 || thisUnit.Eliminated) {
+        thisUnit.Aborted = true
+        units = units.filter((unit) => unit.Id !== thisUnit.Id)
+      }
+      GameStatus.print(
+        `\t\t\t\tAllocating ${hitsOnThisUnit} hits to ${thisUnit.Id} -> now has ${thisUnit.Hits} hits ${this.statusStr(
+          thisUnit
+        )}`
+      )
+
+      // if all units have recevied two hits, units array will now be empty
+      // so reset it back to all (uneliminated) units and start again 2 hits per unit
+      if (hitsStillToAllocate > 0 && units.length === 0) {
+        units = options.attackingUnits.filter((unit) => !unit.Eliminated)
+      }
+    }
+  }
+
+  private prioritiseRemainingTargets(options: AirCombatOptions): AirUnit[] {
+    let units = options.attackingUnits.sort((a, b) => b.AAStrength - a.AAStrength)
+    const targetContainsTaskForces = this.targetHex.TaskForces
+    if (targetContainsTaskForces.length > 0) {
+      units = options.attackingUnits.sort((a, b) => b.AntiNavalStrength - a.AntiNavalStrength)
+    }
+    return units
+  }
   public allocateAirCombatHits(result: { hitsvsEscort: number; hitsvsCap: number }, options: AirCombatOptions) {
     // first hit goes to CAP or escort unit, then any excess hits are
     // allocated by attacker.
@@ -243,6 +277,7 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
 
       // set the hits for the escort unit
       options.escortUnit.Hits += hitsApplytoEscort
+      options.escortUnit.HitsThisMission += hitsApplytoEscort
 
       // reducde hits still left to allocate amongst other units
       let hitsStillToAllocate = result.hitsvsEscort - hitsApplytoEscort
@@ -253,34 +288,52 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
         otherUnits = options.attackingUnits.filter((unit) => unit.Id !== options.escortUnit?.Id)
       }
 
+      GameStatus.print(
+        `\n\t\t\tApply ${hitsApplytoEscort} Hits to Escort Unit ${options.escortUnit.Id} -> now has ${
+          options.escortUnit.Steps
+        } steps${this.statusStr(options.escortUnit)}`
+      )
+
       // sort mission air units by AA strength and allocate two hits per unit beginning with escort unit then by strongest)
       // until no more hits to allocate
-      let units = options.attackingUnits.sort((a, b) => b.AAStrength - a.AAStrength)
+      let units = otherUnits.sort((a, b) => b.AAStrength - a.AAStrength)
 
       while (hitsStillToAllocate > 0 && units.length > 0) {
-        const hitsOnThisUnit = Math.min(hitsStillToAllocate, Math.min(units[0].Steps, 2))
+        const nextUnit = units[0]
+        const hitsOnThisUnit = Math.min(hitsStillToAllocate, units[0].Steps, 2)
         hitsStillToAllocate -= hitsOnThisUnit
         units[0].Hits += hitsOnThisUnit
+        units[0].HitsThisMission += hitsOnThisUnit
+
         if (hitsOnThisUnit === 2 || units[0].Eliminated) {
           units[0].Aborted = true
           units = units.filter((unit) => unit.Id !== units[0].Id)
         }
+        if (hitsOnThisUnit) {
+          const statusStr = nextUnit.Eliminated ? ' (ELIMINATED) ' : nextUnit.Aborted ? ' (ABORTED) ' : ''
+          GameStatus.print(
+            `\t\t\tApply ${hitsOnThisUnit} Hits to Attacking Air Unit ${nextUnit.Id} -> now has ${nextUnit.Steps} steps${statusStr}`
+          )
+        }
 
         // if all units have recevied two hits, units array will now be empty
         // so reset it back to all (uneliminated) units and start again 2 hits per unit
+
         if (hitsStillToAllocate > 0 && units.length === 0) {
-          units = options.attackingUnits.filter((unit) => !unit.Eliminated)
+          units = []
+          if (options.escortUnit.Eliminated === false) {
+            units.push(options.escortUnit)
+          }
+          units = units.concat(
+            options.attackingUnits
+              .filter((unit) => !unit.Eliminated && unit.Id !== options.escortUnit?.Id)
+              .sort((a, b) => b.AAStrength - a.AAStrength)
+          )
         }
       }
-
-      const statusStr = options.escortUnit.Eliminated
-        ? ' (ELIMINATED) '
-        : options.escortUnit.Aborted
-        ? ' (ABORTED) '
-        : ''
-      GameStatus.print(
-        `\n\t\t\tEscort Unit ${options.escortUnit.Id} now has ${options.escortUnit.Steps} steps${statusStr}`
-      )
+      if (hitsStillToAllocate > 0) {
+        GameStatus.print(`\t\t\tApply ${hitsStillToAllocate} Hits Lost`)
+      }
     }
 
     // Escort vs CAP
@@ -291,7 +344,7 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
 
       // the number of hits to apply to the CAP unit is the hit result up to a max of 2.
       // But reduced if the CAP unit has less than 2 steps left
-
+      GameStatus.print(`\n\t\t\tCAP Unit ${options.capUnit.Id} starts with ${options.capUnit.Steps} steps`)
       if (result.hitsvsCap < 2) {
         maximumRemainingHitsForCap = Math.min(result.hitsvsCap, options.capUnit.Steps)
       }
@@ -311,30 +364,48 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
         otherUnits = options.defendingUnits.filter((unit) => unit.Id !== options.capUnit?.Id)
       }
 
+      const statusStr = options.capUnit.Eliminated ? ' (ELIMINATED) ' : ''
+      GameStatus.print(
+        `\t\t\tApply ${hitsApplytoCap} Hits to CAP Unit ${options.capUnit.Id} -> now has ${options.capUnit.Steps} steps${statusStr}`
+      )
+
       // sort mission air units by AA strength and allocate two hits per unit beginning with escort unit then by strongest)
       // until no more hits to allocate
-      let units = options.defendingUnits.sort((a, b) => b.AAStrength - a.AAStrength)
-
-      while (hitsStillToAllocate > 0 && units.length > 0) {
-        console.log('----------- TOTAL HITS LEFT TO ALLOCATE = ', hitsStillToAllocate)
-
-        const hitsOnThisUnit = Math.min(hitsStillToAllocate, Math.min(units[0].Steps, 2))
+      otherUnits = otherUnits.sort((a, b) => b.AAStrength - a.AAStrength)
+      while (hitsStillToAllocate > 0 && otherUnits.length > 0) {
+        const hitsOnThisUnit = Math.min(hitsStillToAllocate, Math.min(otherUnits[0].Steps, 2))
         hitsStillToAllocate -= hitsOnThisUnit
-        units[0].Hits += hitsOnThisUnit
-        console.log(`Applying ${hitsOnThisUnit} hits to Unit ${units[0].Id} -> it now has ${units[0].Steps} steps`)
-        if (hitsOnThisUnit === 2 || units[0].Eliminated) {
-          units = units.filter((unit) => unit.Id !== units[0].Id)
+        const nextUnit = otherUnits[0]
+
+        nextUnit.Hits += hitsOnThisUnit
+        if (hitsOnThisUnit === 2 || nextUnit.Eliminated) {
+          otherUnits = otherUnits.filter((unit) => unit.Id !== nextUnit.Id)
+        }
+        if (hitsOnThisUnit > 0) {
+          const statusStr = nextUnit.Eliminated ? ' (ELIMINATED) ' : ''
+          GameStatus.print(
+            `\t\t\tApply ${hitsOnThisUnit} Hits to Defending Air Unit ${nextUnit.Id} -> now has ${nextUnit.Steps} steps${statusStr}`
+          )
         }
 
         // if all units have recevied two hits, units array will now be empty
         // so reset it back to all (uneliminated) units and start again 2 hits per unit
-        if (hitsStillToAllocate > 0 && units.length === 0) {
-          units = options.defendingUnits.filter((unit) => !unit.Eliminated)
+        // if (hitsStillToAllocate > 0 && otherUnits.length === 0) {
+        //   otherUnits = options.defendingUnits.filter((unit) => !unit.Eliminated)
+        // }
+
+        if (hitsStillToAllocate > 0 && otherUnits.length === 0) {
+          otherUnits = []
+          if (options.capUnit.Eliminated === false) {
+            otherUnits.push(options.capUnit)
+          }
+          otherUnits = otherUnits.concat(
+            options.defendingUnits
+              .filter((unit) => !unit.Eliminated && unit.Id !== options.capUnit?.Id)
+              .sort((a, b) => b.AAStrength - a.AAStrength)
+          )
         }
       }
-
-      const statusStr = options.capUnit.Eliminated ? ' (ELIMINATED) ' : ''
-      GameStatus.print(`\n\t\t\tCAP Unit ${options.capUnit.Id} now has ${options.capUnit.Steps} steps${statusStr}`)
     }
   }
   public strikeStrafeProcedure(airStrikeTargets: AirStrikeTarget[]) {
@@ -644,7 +715,7 @@ class ES1BattleCyle extends DefaultBattleCycle {
     GameStatus.navalUnitHits = this.scenario.Force.NavalUnits.reduce((accum, item) => accum + item.Hits, 0)
   }
   public async disAdvantageMovementPhase() {
-    GameStatus.print('\t\t\tDISADVANTAGE MOVEMENT PHASE')
+    GameStatus.print('\n\t\t\tDISADVANTAGE MOVEMENT PHASE')
     GameStatus.print('\t\t\t===================================')
     GameStatus.print('\t\t\t\t=> No Movement.')
     GameStatus.print(

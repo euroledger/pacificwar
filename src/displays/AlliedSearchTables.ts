@@ -1,7 +1,7 @@
 import { AircraftType } from "../units/Interfaces"
 import { DetectionLevel, NavalSearchTable, SearchResultsForDistance, SearchResultsForTimeOfDay, TimeOfDay } from "./SearchCharts"
 
-const alliedLRADayResults: SearchResultsForDistance = new Map([
+const alliedLRADayResults: Readonly<SearchResultsForDistance> = new Map([
   [0, [[0, 5], [6, 7], [8]]], // shows results for LRA-day search for same hex: 0-5 is number and types of all naval units, 6-7 is number of capital and non-capital ships and whether there are any carries, 8 is number of naval units +-50%
   [1, [[0, 3], [4, 5], [6]]],
   [2, [[0, 2], [3, 4], [5]]],
@@ -12,7 +12,7 @@ const alliedLRADayResults: SearchResultsForDistance = new Map([
   [7, [[DetectionLevel.undetected], [DetectionLevel.undetected], [0]]],
   [8, [[DetectionLevel.undetected], [DetectionLevel.undetected], [0]]],
 ])
-const alliedLRANightResults: SearchResultsForDistance = new Map([
+const alliedLRANightResults: Readonly<SearchResultsForDistance> = new Map([
   [0, [[0, 2], [3, 4], [5]]], 
   [1, [[0], [1,2], [3]]],
   [2, [[DetectionLevel.undetected], [0,1], [2]]],
@@ -25,7 +25,7 @@ const alliedLRANightResults: SearchResultsForDistance = new Map([
 ])
 
 
-const alliedFTBDayResults: SearchResultsForDistance = new Map([
+const alliedFTBDayResults: Readonly<SearchResultsForDistance> = new Map([
   [0, [[0, 5], [6, 7], [8]]],
   [1, [[0, 2], [3, 4], [5]]],
   [2, [[0, 1], [2, 3], [4]]],
@@ -37,7 +37,7 @@ const alliedFTBDayResults: SearchResultsForDistance = new Map([
   [8, [[DetectionLevel.undetected], [DetectionLevel.undetected], [DetectionLevel.undetected]]],
 ])
 
-const alliedFTBNightResults: SearchResultsForDistance = new Map([
+const alliedFTBNightResults: Readonly<SearchResultsForDistance> = new Map([
   [0, [[0, 2], [3, 4], [5]]], 
   [1, [[DetectionLevel.undetected], [DetectionLevel.undetected], [DetectionLevel.undetected]]],
   [2, [[DetectionLevel.undetected], [DetectionLevel.undetected], [DetectionLevel.undetected]]],
@@ -49,7 +49,7 @@ const alliedFTBNightResults: SearchResultsForDistance = new Map([
   [8, [[DetectionLevel.undetected], [DetectionLevel.undetected], [DetectionLevel.undetected]]],
 ])
 
-const alliedSpotterDayResults: SearchResultsForDistance = new Map([
+const alliedSpotterDayResults: Readonly<SearchResultsForDistance> = new Map([
   [0, [[0, 5], [6, 7], [8]]],
   [1, [[0], [1,2], [3]]],
   [2, [[DetectionLevel.undetected], [0,1], [2]]],
@@ -61,7 +61,7 @@ const alliedSpotterDayResults: SearchResultsForDistance = new Map([
   [8, [[DetectionLevel.undetected], [DetectionLevel.undetected], [DetectionLevel.undetected]]],
 ])
 
-const alliedSpotterNightResults: SearchResultsForDistance = new Map([
+const alliedSpotterNightResults: Readonly<SearchResultsForDistance> = new Map([
   [0, [[0, 2], [3, 4], [5]]], 
   [1, [[DetectionLevel.undetected], [DetectionLevel.undetected], [DetectionLevel.undetected]]],
   [2, [[DetectionLevel.undetected], [DetectionLevel.undetected], [DetectionLevel.undetected]]],
@@ -73,34 +73,34 @@ const alliedSpotterNightResults: SearchResultsForDistance = new Map([
   [8, [[DetectionLevel.undetected], [DetectionLevel.undetected], [DetectionLevel.undetected]]],
 ])
 
-const alliedAirSearchDayResults: SearchResultsForDistance = new Map([
+const alliedAirSearchDayResults: Readonly<SearchResultsForDistance> = new Map([
   [0, [[0, 3], [4, 5], [6]]]
 ])
 
-const alliedAirSearchNightResults: SearchResultsForDistance = new Map([
+const alliedAirSearchNightResults: Readonly<SearchResultsForDistance> = new Map([
   [0, [[0, 1], [2, 3], [4]]]
 ])
 
-const alliedLRASearchTable: SearchResultsForTimeOfDay = new Map([
+const alliedLRASearchTable: Readonly<SearchResultsForTimeOfDay> = new Map([
   [TimeOfDay.Day, alliedLRADayResults],
   [TimeOfDay.Night, alliedLRANightResults],
 ])
-const alliedFTBSearchTable: SearchResultsForTimeOfDay = new Map([
+const alliedFTBSearchTable: Readonly<SearchResultsForTimeOfDay> = new Map([
   [TimeOfDay.Day, alliedFTBDayResults],
   [TimeOfDay.Night, alliedFTBNightResults],
 ])
 
-const alliedSpotterSearchTable: SearchResultsForTimeOfDay = new Map([
+const alliedSpotterSearchTable: Readonly<SearchResultsForTimeOfDay> = new Map([
   [TimeOfDay.Day, alliedSpotterDayResults],
   [TimeOfDay.Night, alliedSpotterNightResults],
 ])
 
-export const alliedAirSearchChartResults: SearchResultsForTimeOfDay = new Map([
+export const alliedAirSearchChartResults: Readonly<SearchResultsForTimeOfDay> = new Map([
   [TimeOfDay.Day, alliedAirSearchDayResults],
   [TimeOfDay.Night, alliedAirSearchNightResults],
 ])
 
-export const alliedSearchChartResults: NavalSearchTable = new Map([
+export const alliedSearchChartResults: Readonly<NavalSearchTable> = new Map([
   [AircraftType.LRA, alliedLRASearchTable],
   [AircraftType.F, alliedFTBSearchTable],
   [AircraftType.T, alliedFTBSearchTable],

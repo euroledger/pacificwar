@@ -59,7 +59,7 @@ export abstract class AbstractUnit {
     return this.id
   }
   get AAStrength(): number {
-    return this.aaStrength
+    return Math.max(this.aaStrength - this.Hits, -1) // -1 means 0(4) on the results table
   }
 
   public get Side(): Side {

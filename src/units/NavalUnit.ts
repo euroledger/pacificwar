@@ -21,7 +21,7 @@ export enum NavalUnitType {
   SeaplaneTender = 'Seaplane Tender'
 }
 
-const navalUnitMap: Map<string, NavalUnitType> = new Map([
+const navalUnitMap: Readonly<Map<string, NavalUnitType>> = new Map([
   ['BB', NavalUnitType.Battleship],
   ['BC', NavalUnitType.Battlecruiser],
   ['CV', NavalUnitType.AircraftCarrier],
@@ -52,6 +52,7 @@ interface NavalUnitOptions {
   bombardStrength: number
   shortTorpedo: number
   mediumTorpedo: number
+  aswStrength: number
   launchCapacity: number
   airGroup: string
   spotterPlane: string
@@ -92,6 +93,7 @@ export class NavalUnit extends AbstractUnit {
   private bombardStrength!: number
   private shortTorpedo!: number
   private mediumTorpedo!: number
+  private aswStrength!: number
   private airGroup!: string
   private spotterPlane!: string
   private loaded: boolean = false
@@ -119,6 +121,7 @@ export class NavalUnit extends AbstractUnit {
     this.airGroup = options.airGroup
     this.shortTorpedo = options.shortTorpedo
     this.mediumTorpedo = options.mediumTorpedo
+    this.aswStrength = options.aswStrength
     this.spotterPlane = options.spotterPlane
 
     this.setNavalUnitType(this.id)
@@ -149,29 +152,32 @@ export class NavalUnit extends AbstractUnit {
   }
 
   public get ShortGunnery(): number {
-    return this.shortGunnery
+    return Math.max(this.shortGunnery - this.Hits, -1) // -1 means 0(4) on the results table
   }
 
   public get MediumGunnery(): number {
-    return this.mediumGunnery
-  }
-
-  public get ShortTorpedo(): number {
-    return this.shortTorpedo
-  }
-
-  public get MediumTorpedo(): number {
-    return this.mediumTorpedo
+    return Math.max(this.mediumGunnery - this.Hits, -1) 
   }
 
   public get LongGunnery(): number {
-    return this.longGunnery
+    return Math.max(this.longGunnery - this.Hits, -1) 
+  }
+  
+  public get ShortTorpedo(): number {
+    return Math.max(this.shortTorpedo - this.Hits, -1) 
+  }
+
+  public get MediumTorpedo(): number {
+    return Math.max(this.mediumTorpedo - this.Hits, -1) 
   }
 
   public get BombardStrength(): number {
-    return this.bombardStrength
+    return Math.max(this.bombardStrength - this.Hits, -1) 
   }
 
+  public get ASW(): number {
+    return Math.max(this.aswStrength - this.Hits, -1) 
+  }
   public get LaunchCapacity(): number {
     return this.launchCapacity
   }

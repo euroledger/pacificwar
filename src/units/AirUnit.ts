@@ -26,9 +26,9 @@ export class AirUnit extends AbstractUnit {
   private aircraftLevel!: number
   private reverseAA!: number
   private steps!: number
-  private eliminated!: boolean
+  private eliminated: boolean = false
   private aborted: boolean = false
-  private hitsThisCycle: number = 0
+  private hitsThisMission: number = 0
 
   constructor(options: AirUnitOptions) {
     super(options.name, options.type, options.side, options.id, options.apCost, options.aaStrength, options.hits)
@@ -92,12 +92,12 @@ export class AirUnit extends AbstractUnit {
     return this.hits
   }
 
-  public get HitsThisCycle(): number {
-    return this.hitsThisCycle
+  public get HitsThisMission(): number {
+    return this.hitsThisMission
   }
 
-  public set HitsThisCycle(hitsThisCycle: number) {
-    this.hitsThisCycle = hitsThisCycle
+  public set HitsThisMission(hitsThisMission: number) {
+    this.hitsThisMission = hitsThisMission
   }
   public get Aborted(): boolean {
     return this.aborted
@@ -108,7 +108,7 @@ export class AirUnit extends AbstractUnit {
   }
 
   public set Hits(hits: number) {
-    this.hits = hits
+    this.hits = Math.min(6, hits)
     this.steps = 6 - this.hits
     if (this.Steps === 0) {
       this.eliminated = true
