@@ -195,6 +195,7 @@ describe('Air Mission Schmatic', () => {
     force = new Force(forceOptions)
     oahuHex.addForceToHex(force)
   }
+  
   beforeAll(async () => {
     await main.load()
     rows = main.Rows
@@ -291,7 +292,7 @@ describe('Air Mission Schmatic', () => {
 
       const battleshipsAtTarget = force.NavalUnits.filter((unit) => unit.Id.startsWith('BB'))
 
-      airStrikeTargets = airMission.allocateStrikeTargets(missionAirUnits, force.AirUnits, battleshipsAtTarget)
+      airStrikeTargets = airMission.allocateStrikeTargetsBattleCycle1(missionAirUnits, force.AirUnits, battleshipsAtTarget)
       expect(airStrikeTargets.length).toBe(6)
     })
 

@@ -419,4 +419,12 @@ export class AirMissionSchematic {
   public async airMissionConclusionProcedure() {
     GameStatus.airMissionConcluded = true
   }
+
+  public get Detected(): boolean {
+    return this.detected
+  }
+
+  public set Detected(detected: boolean) {
+    this.detected = detected
+  }
 }

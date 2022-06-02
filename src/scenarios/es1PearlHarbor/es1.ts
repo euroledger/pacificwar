@@ -19,7 +19,12 @@ import {
 import { AirUnit } from '../../units/AirUnit'
 import { AirStrikeTarget } from '../../airmissions/AirStrikeTarget'
 import { AirCombatResult, AirNavalCombatResultsTable } from '../../displays/AirNavalCombatResultsTable'
-import { minNumberOfAirUnitTargets, maxNumberOfAirUnitTargets, numBattleshipsPerTargetGroup } from './es1Config'
+import {
+  minNumberOfAirUnitTargets,
+  maxNumberOfAirUnitTargets,
+  numBattleshipsPerTargetGroup,
+  numShipsPerTargetGroup
+} from './es1Config'
 import { DetectionLevel, SearchChart, SearchOptions, TimeOfDay } from '../../displays/SearchCharts'
 import { alliedSearchChartResults as alliedNavalSearchChartResults } from '../../../src/displays/AlliedSearchTables'
 import { AirNavalCombatType } from '../../displays/interfaces'
@@ -59,10 +64,6 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
   }
 
   public async designateStrikeTargets(): Promise<AirStrikeTarget[] | undefined> {
-    if (GameStatus.battleCycle === 2) {
-      return []
-    }
-
     GameStatus.print('\n')
     GameStatus.print('\t\t\tDesignate Targets for Japanese Air Strike')
     GameStatus.print('\t\t\t-----------------------------------------')
@@ -79,12 +80,20 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
     GameStatus.print(`\t\t\t\t => Target is Force`)
 
     const battleshipsAtTarget = force.NavalUnits.filter((unit) => unit.Id.startsWith('BB'))
-    const airStrikeTargets: AirStrikeTarget[] = this.allocateStrikeTargets(
-      this.missionAirUnits,
-      force.AirUnits,
-      battleshipsAtTarget
-    )
-
+    let airStrikeTargets: AirStrikeTarget[] = []
+    if (GameStatus.battleCycle === 1) {
+      airStrikeTargets = this.allocateStrikeTargetsBattleCycle1(
+        this.missionAirUnits,
+        force.AirUnits,
+        battleshipsAtTarget
+      )
+    } else {
+      airStrikeTargets = this.allocateStrikeTargetsBattleCycle2(
+        this.missionAirUnits.filter((missionAirUnits) => !missionAirUnits.Eliminated && !missionAirUnits.Aborted),
+        force.AirUnits,
+        force.NavalUnits
+      )
+    }
     return airStrikeTargets
   }
 
@@ -96,7 +105,7 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
   // 4. To prevent hits bunching on one or two ships the order of targeting amongst the six is reversed for each air unit
   // 5. We do not need to preallocate air unit targets but since the hits will be spread amongst multiple air units
   // I have done so anyway (makes little difference)
-  public allocateStrikeTargets(
+  public allocateStrikeTargetsBattleCycle1(
     missionAirUnits: AirUnit[],
     airUnitsAtTarget: AirUnit[],
     battleshipsAtTarget: NavalUnit[]
@@ -171,6 +180,164 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
     return airStrikeTargets
   }
 
+  public allocateNavalTargetsForLessThan4Needed(
+    missionAirUnits: AirUnit[],
+    shipsAtTarget: NavalUnit[]
+  ): AirStrikeTarget[] {
+    console.log('Less than 4 hits needed to win - target 3 ships with hits less than 4 and 3 others at random')
+
+    const airStrikeTargets = new Array<AirStrikeTarget>()
+
+    // get all battleships not yet at the VP threshold for hits (4)
+    // assume any ships with no hits are not part of the target list
+
+    const targetShips = shipsAtTarget
+      .filter((unit) => unit.Hits < 4 && unit.Hits > 0)
+      .sort(() => Math.random() - Math.random()) // randomise priorties
+
+    // assign 3 air units with highest AA strength - so sort and slice
+    let attackingAirUnits = missionAirUnits.sort((a, b) => b.AAStrength - a.AAStrength).slice(0, 3)
+
+    let reverseArray = [...targetShips].reverse()
+
+    let odd = true
+    for (const unit of attackingAirUnits) {
+      airStrikeTargets.push(
+        new AirStrikeTarget({
+          attacker: unit,
+          combatType: AirNavalCombatType.FAirvsNaval,
+          navalTargets: odd ? targetShips : reverseArray
+        })
+      )
+      odd = !odd
+    }
+    // remaining air units - assign at random
+    const otherAirUnits = missionAirUnits.filter((item) => !attackingAirUnits.includes(item))
+
+    for (const unit of otherAirUnits) {
+      const otherShips = shipsAtTarget
+      .filter((unit) => unit.Hits === 0)
+      .sort(() => Math.random() - Math.random())
+      .slice(0, numShipsPerTargetGroup) // randomise priorties
+      airStrikeTargets.push(
+        new AirStrikeTarget({
+          attacker: unit,
+          combatType: AirNavalCombatType.FAirvsNaval,
+          navalTargets: odd ? otherShips : reverseArray
+        })
+      )
+      odd = !odd
+    }
+    return airStrikeTargets
+  }
+
+  public allocateNavalTargetsForMoreThan4Needed(
+    missionAirUnits: AirUnit[],
+    shipsAtTarget: NavalUnit[]
+  ): AirStrikeTarget[] {
+    console.log('More  than 4 hits needed to win - target ships with hits less than 4')
+    const airStrikeTargets = new Array<AirStrikeTarget>()
+    6
+    // get all battleships not yet at the VP threshold for hits (4)
+    // assume any ships with no hits are not needed to hit the
+
+    let targetShips = shipsAtTarget
+      .filter((unit) => unit.Hits <= 5 && unit.Hits > 0)
+      .sort(() => Math.random() - Math.random()) // randomise priorties
+
+    // if there are less than 6 (or numBattleshipsPerTargetGroup) ships in this list then pick enough random battleships
+    // to bring the number up to 6 (otherwise it will be impossible to win)
+
+    if (targetShips.length < numBattleshipsPerTargetGroup) {
+      const battleshipsToAdd = numBattleshipsPerTargetGroup - targetShips.length
+      const remainingBattleships = shipsAtTarget
+        .filter((unit) => unit.Id.startsWith('BB') && unit.Hits === 0)
+        .sort(() => Math.random() - Math.random())
+        .slice(0, battleshipsToAdd)
+      targetShips = targetShips.concat(remainingBattleships)
+    }
+
+    const reverseArray = [...targetShips].reverse()
+
+    let odd = true
+    for (const unit of missionAirUnits) {
+      airStrikeTargets.push(
+        new AirStrikeTarget({
+          attacker: unit,
+          combatType: AirNavalCombatType.FAirvsNaval,
+          navalTargets: odd ? targetShips : reverseArray
+        })
+      )
+      odd = !odd
+    }
+    return airStrikeTargets
+  }
+  public allocateNavalTargetsIfEnoughHitsForVictory(
+    missionAirUnits: AirUnit[],
+    shipsAtTarget: NavalUnit[]
+  ): AirStrikeTarget[] {
+    GameStatus.print(
+      '\t\t\t\t6 battleships with 4 or more - enough to win - allocate random ship targets amongst non crippled or sunk remaining ships'
+    )
+
+    GameStatus.print('\n')
+    GameStatus.print(`\t\t\t\t => ${missionAirUnits.length} air units attacking ${numShipsPerTargetGroup} ships each`)
+    const airStrikeTargets = new Array<AirStrikeTarget>()
+
+    const possibleTargets = shipsAtTarget.filter((unit) => !(unit.Hits >= 4))
+
+    for (const unit of missionAirUnits) {
+      let targetShips = possibleTargets.sort(() => Math.random() - Math.random()).slice(0, numShipsPerTargetGroup)
+
+      airStrikeTargets.push(
+        new AirStrikeTarget({
+          attacker: unit,
+          combatType: AirNavalCombatType.FAirvsNaval,
+          navalTargets: targetShips
+        })
+      )
+    }
+    console.log("NUM TARGETS = ", airStrikeTargets.length)
+    return airStrikeTargets
+  }
+
+  public allocateStrikeTargetsBattleCycle2(
+    missionAirUnits: AirUnit[],
+    airUnitsAtTarget: AirUnit[],
+    shipsAtTarget: NavalUnit[]
+  ): AirStrikeTarget[] {
+    missionAirUnits = missionAirUnits.filter((unit) => !unit.Aborted)
+    let airStrikeTargets = new Array<AirStrikeTarget>()
+
+    if (this.Detected) {
+      // No attacks on air units (they are alerted)
+      // alogorithm for allocating targets:
+      // 2. If 24 battleship hits achieved across 6 battleships, allocate random ship targets
+      // 3. If less than 24 victory points achieved allocate all air units to attack ships:
+      //    if <= 4 hits required 3 attacking units against the ships with < 4 hits other 3 attack random targets
+      //    if 5+ hits required, allocate all attacking units to those ships
+      GameStatus.print('\n')
+
+      if (ES1.battleshipsWith4HitsOrMore.length >= 6) {
+        airStrikeTargets = this.allocateNavalTargetsIfEnoughHitsForVictory(missionAirUnits, shipsAtTarget)
+      } else if (GameStatus.navalUnitHits >= 20) {
+        // 4 or less hits needed
+        airStrikeTargets = this.allocateNavalTargetsForLessThan4Needed(missionAirUnits, shipsAtTarget)
+      } else {
+        // 5+ hits required - all air units attack the battleships needed to VP win
+        airStrikeTargets = this.allocateNavalTargetsForMoreThan4Needed(missionAirUnits, shipsAtTarget)
+      }
+      GameStatus.print(`\t\t\t\t => Target Ships: `)
+      for (const target of airStrikeTargets) {
+        GameStatus.print(`\n\t\t\t\t\t ${target.Attacker.Id} attacking: `)
+        for (const unit of target.NavalTargets) GameStatus.print(`\t\t\t\t\t ${unit.Id} ${unit.Name} `)
+      }
+    } else {
+      console.log('>>>> NOT DETECTED')
+      // we can strafe here so airUnitsAtTarget will be used
+    }
+    return airStrikeTargets
+  }
   public async flakProcedure(options: AirCombatOptions, dieRoll?: number): Promise<void> {
     if (GameStatus.battleCycle === 1) {
       GameStatus.print(`\t\t\tResolve FLAK`)
