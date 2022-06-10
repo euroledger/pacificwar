@@ -263,12 +263,12 @@ describe('Battle Cycle 2 Air Strike', () => {
     expect(cad5Instances).toBe(1)
     expect(cad6Instances).toBe(0) // cad6 aborted
 
-    let cad5Targets = airStrikeTargets.filter((unit) => (unit.Attacker.Id === 'CAD5'))
+    let cad5Targets = airStrikeTargets.filter((unit) => unit.Attacker.Id === 'CAD5')
 
-    let cad5BBTargets = cad5Targets[0].NavalTargets.reduce((a,c) => (c.Id.startsWith('BB') && c.Hits> 0 ? ++a : a), 0)
+    let cad5BBTargets = cad5Targets[0].NavalTargets.reduce((a, c) => (c.Id.startsWith('BB') && c.Hits > 0 ? ++a : a), 0)
     expect(cad5BBTargets).toBe(3)
 
-    // now assume a bad first battle cycle airstrike - all air units will attack the same 6 battleships 
+    // now assume a bad first battle cycle airstrike - all air units will attack the same 6 battleships
     westvirginia.Hits = 1
     california.Hits = 1
     maryland.Hits = 1
@@ -279,9 +279,104 @@ describe('Battle Cycle 2 Air Strike', () => {
     GameStatus.navalUnitHits = 3
     airStrikeTargets = airMission.allocateStrikeTargetsBattleCycle2(missionAirUnits, force.AirUnits, force.NavalUnits)
     expect(airStrikeTargets.length).toBe(5) // only 5 non-aborted air units
-    cad5Targets = airStrikeTargets.filter((unit) => (unit.Attacker.Id === 'CAD5'))
-    cad5BBTargets = cad5Targets[0].NavalTargets.reduce((a,c) => (c.Id.startsWith('BB') ? ++a : a), 0)
+    cad5Targets = airStrikeTargets.filter((unit) => unit.Attacker.Id === 'CAD5')
+    cad5BBTargets = cad5Targets[0].NavalTargets.reduce((a, c) => (c.Id.startsWith('BB') ? ++a : a), 0)
     expect(cad5BBTargets).toBe(6)
+  })
 
+  test('Allocate Air Units to naval or air targets based on game status', async () => {
+    setUpJapanesAirStrike()
+    airMission.Detected = false
+
+    setUpOahuForce()
+
+    GameStatus.navalUnitHits = 24 // - 0 to go
+    GameStatus.airUnitHits = 4 // - 8 to go
+
+    // => Allocate targets:
+    // 1. Calculate percentage of hits achieved against ships, and air units
+    //   - for above, all hits on BBs achieved - all air units should attack unalerted air on the ground
+    // 2. Allocate that percentage of avaialable air units to each set of targets
+    // 3. Example:
+    //    a) 4 more hits needed on ships, 4 more hits needed against air -> split 50/50 surplus goes to attack naval
+    //    b) 2 more hits needed on ships, 8 on air -> one units attack naval, five attack air
+
+    // air units will strafe the unalerted air units
+    let { numAirUnitsAttackingNaval, numAirUnitsAttackingAir } = airMission.determineTargetTypeAllocations(missionAirUnits)
+    expect(numAirUnitsAttackingNaval).toBe(0)
+    expect(numAirUnitsAttackingAir).toBe(6)
+
+    GameStatus.navalUnitHits = 12 // - 12 to go
+    GameStatus.airUnitHits = 4 // - 8 to go
+    let { numAirUnitsAttackingNaval: naval, numAirUnitsAttackingAir: air } =
+      airMission.determineTargetTypeAllocations(missionAirUnits)
+    expect(naval).toBe(4)
+    expect(air).toBe(2)
+
+    GameStatus.navalUnitHits = 12 // - 12 to go
+    GameStatus.airUnitHits = 12 // - 0 to go
+    let { numAirUnitsAttackingNaval: naval2, numAirUnitsAttackingAir: air2 } =
+      airMission.determineTargetTypeAllocations(missionAirUnits)
+    expect(naval2).toBe(6)
+    expect(air2).toBe(0)
+
+    GameStatus.navalUnitHits = 24 // - 0 to go
+    GameStatus.airUnitHits = 12 // - 0 to go
+    let { numAirUnitsAttackingNaval: naval3, numAirUnitsAttackingAir: air3 } = airMission.determineTargetTypeAllocations(
+      missionAirUnits,
+      .25 // % of units attacking naval targets
+    )
+    expect(naval3).toBe(2)
+    expect(air3).toBe(4)
+  })
+  test('Allocate Air Strike Targets, Air Strike Not Detected', async () => {
+    setUpJapanesAirStrike()
+    airMission.Detected = false
+
+    setUpOahuForce()
+
+    // Allocate hits to ships and air units from first wave
+    westvirginia.Hits = 4
+    california.Hits = 4
+    maryland.Hits = 4
+    tennessee.Hits = 4
+    nevada.Hits = 3
+    pennsylvania.Hits = 3
+
+    GameStatus.navalUnitHits = 22 // - 2 to go
+    GameStatus.airUnitHits = 4 // - 8 to go
+
+    cad1.Hits = 0
+    cad2.Hits = 0
+    cad3.Hits = 0
+    cad4.Hits = 0
+    cad5.Hits = 0
+    cad6.Hits = 0
+    cad6.Aborted = false
+
+    ES1.battleshipsWith4HitsOrMore = force.NavalUnits.filter((unit) => unit.Id.startsWith('BB') && unit.Hits >= 4)
+    expect(ES1.battleshipsWith4HitsOrMore.length).toBe(4)
+    let airStrikeTargets: AirStrikeTarget[] = airMission.allocateStrikeTargetsBattleCycle2(
+      missionAirUnits,
+      force.AirUnits,
+      force.NavalUnits
+    )
+    expect(airStrikeTargets.length).toBe(6)
+    expect(airStrikeTargets[0].NavalTargets.length).toBe(2)
+    expect(airStrikeTargets[2].AirTarget).toBeTruthy()
+
+    const cad1Instances = airStrikeTargets.reduce((a, c) => (c.Attacker.Id === 'CAD1' ? ++a : a), 0)
+    const cad2Instances = airStrikeTargets.reduce((a, c) => (c.Attacker.Id === 'CAD2' ? ++a : a), 0)
+    const cad3Instances = airStrikeTargets.reduce((a, c) => (c.Attacker.Id === 'CAD3' ? ++a : a), 0)
+    const cad4Instances = airStrikeTargets.reduce((a, c) => (c.Attacker.Id === 'CAD4' ? ++a : a), 0)
+    const cad5Instances = airStrikeTargets.reduce((a, c) => (c.Attacker.Id === 'CAD5' ? ++a : a), 0)
+    const cad6Instances = airStrikeTargets.reduce((a, c) => (c.Attacker.Id === 'CAD6' ? ++a : a), 0)
+
+    expect(cad1Instances).toBe(1)
+    expect(cad2Instances).toBe(1)
+    expect(cad3Instances).toBe(1)
+    expect(cad4Instances).toBe(1)
+    expect(cad5Instances).toBe(1)
+    expect(cad6Instances).toBe(1)
   })
 })

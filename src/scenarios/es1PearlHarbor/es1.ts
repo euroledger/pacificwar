@@ -216,9 +216,9 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
 
     for (const unit of otherAirUnits) {
       const otherShips = shipsAtTarget
-      .filter((unit) => unit.Hits === 0)
-      .sort(() => Math.random() - Math.random())
-      .slice(0, numShipsPerTargetGroup) // randomise priorties
+        .filter((unit) => unit.Hits === 0)
+        .sort(() => Math.random() - Math.random())
+        .slice(0, numShipsPerTargetGroup) // randomise priorties
       airStrikeTargets.push(
         new AirStrikeTarget({
           attacker: unit,
@@ -297,8 +297,30 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
         })
       )
     }
-    console.log("NUM TARGETS = ", airStrikeTargets.length)
+    console.log('NUM TARGETS = ', airStrikeTargets.length)
     return airStrikeTargets
+  }
+
+  public determineTargetTypeAllocations(
+    missionAirUnits: AirUnit[],
+    percentage?: number
+  ): {
+    numAirUnitsAttackingNaval: number
+    numAirUnitsAttackingAir: number
+  } {
+    const navalHitsNeeded = 24 - GameStatus.navalUnitHits
+    const airHitsNeeded = 12 - GameStatus.airUnitHits
+
+    let navalPercentage = navalHitsNeeded / (navalHitsNeeded + airHitsNeeded)
+    if (navalHitsNeeded + airHitsNeeded === 0) {
+      // already won - allocate targets at random
+      navalPercentage = percentage ?? random(0, 100)
+    }
+    // since naval combat hits less that strafe hits round up number attacking naval
+    const numAirUnitsAttackingNaval = Math.ceil(navalPercentage * missionAirUnits.length)
+    const numAirUnitsAttackingAir = missionAirUnits.length - numAirUnitsAttackingNaval
+
+    return { numAirUnitsAttackingNaval, numAirUnitsAttackingAir }
   }
 
   public allocateStrikeTargetsBattleCycle2(
@@ -335,6 +357,48 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
     } else {
       console.log('>>>> NOT DETECTED')
       // we can strafe here so airUnitsAtTarget will be used
+
+      const { numAirUnitsAttackingNaval, numAirUnitsAttackingAir } =
+        this.determineTargetTypeAllocations(missionAirUnits)
+
+      // allocate units at random (we could allocate by anti-naval strength but that seems like overkill)
+      const airUnitsAttackingNaval = missionAirUnits
+        .sort(() => Math.random() - Math.random())
+        .slice(0, numAirUnitsAttackingNaval)
+
+      // allocate naval targets
+      if (ES1.battleshipsWith4HitsOrMore.length >= 6 && airUnitsAttackingNaval.length > 0) {
+        airStrikeTargets = this.allocateNavalTargetsIfEnoughHitsForVictory(airUnitsAttackingNaval, shipsAtTarget)
+      } else if (GameStatus.navalUnitHits >= 20 && airUnitsAttackingNaval.length > 0) {
+        // 4 or less hits needed
+        airStrikeTargets = this.allocateNavalTargetsForLessThan4Needed(airUnitsAttackingNaval, shipsAtTarget)
+      } else {
+        // 5+ hits required - all air units attack the battleships needed to VP win
+        airStrikeTargets = this.allocateNavalTargetsForMoreThan4Needed(airUnitsAttackingNaval, shipsAtTarget)
+      }
+
+      // allocate air targets for strafing
+      // sort air targets into order of priority based on number of steps
+      airUnitsAtTarget.sort((a, b) => b.Steps - a.Steps)
+
+      // get the first n units to be the list of units to be attacked
+      const targetAirUnits = airUnitsAtTarget.slice(0, numAirUnitsAttackingAir)
+
+      const airUnitsAttackingAir = missionAirUnits.filter((unit) => !airUnitsAttackingNaval.includes(unit))
+
+      // todo total up anti-air strength of all units and do one die roll 
+      // then allocate hits
+      
+      let index = 0
+      for (const unit of airUnitsAttackingAir) {
+        airStrikeTargets.push(
+          new AirStrikeTarget({
+            attacker: unit,
+            combatType: AirNavalCombatType.AirvsUnalertedAir,
+            airTarget: targetAirUnits[index++]
+          })
+        )
+      }
     }
     return airStrikeTargets
   }
@@ -518,6 +582,7 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
 
       // allocate max of 2 hits to escort
       const hitsApplytoCap = Math.min(2, maximumRemainingHitsForCap)
+      GameStatus.airStepsEliminated += hitsApplytoCap
 
       // set the hits for the escort unit
       options.capUnit.Hits += hitsApplytoCap
@@ -545,6 +610,7 @@ export class ES1AirMissionSchematic extends AirMissionSchematic {
         const nextUnit = otherUnits[0]
 
         nextUnit.Hits += hitsOnThisUnit
+        GameStatus.airStepsEliminated += hitsOnThisUnit
         if (hitsOnThisUnit === 2 || nextUnit.Eliminated) {
           otherUnits = otherUnits.filter((unit) => unit.Id !== nextUnit.Id)
         }
