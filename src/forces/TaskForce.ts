@@ -283,7 +283,7 @@ export class TaskForce {
   }
   public print() {
     GameStatus.print(`\t\t         ${this.Side} TASK FORCE ${this.taskForceId}`)
-    GameStatus.print('\t\t\t\t=====================================================================')
+    GameStatus.print('\t\t=====================================================================')
 
     GameStatus.print(`\t\tCORE\t\t\tSCREEN`)
     GameStatus.print(`\t\t----\t\t\t------`)

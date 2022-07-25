@@ -851,12 +851,15 @@ class ES1BattleCyle extends DefaultBattleCycle {
     GameStatus.print('\t\t\tADVANTAGE MOVEMENT PHASE')
     GameStatus.print('\t\t\t===================================')
     GameStatus.print('\t\t\t\t=> No Naval movement. Japanese TFs remain at hex 3519')
-    GameStatus.print('\t\t\t\t=> US conducts search for TFs in hex 3591 with LRA unit')
     GameStatus.advantage = Side.Japan
 
     if (GameStatus.battleCycle === 1) {
+      GameStatus.print('\t\t\t\t=> No US searches in BC1')
+
       return
     }
+    GameStatus.print('\t\t\t\t=> US conducts search for TFs in hex 3591 with LRA unit')
+
     // note second battle cycle -> US can do a search here even if Japanese TFs do not move
 
     // US search for Japan TFs

@@ -98,10 +98,11 @@ export class Main {
 
     await this.setUpGame()
 
+
     for (let i = 0; i < GameStatus.numberOfRuns; i++) {
-      if (i % 10 === 0) {
-        console.log('run ', i)
-      }
+      // if (i % 10 === 0) {
+      //   console.log('run ', i)
+      // }
       await this.scenario.doSequenceOfPlay()
     }
   }
