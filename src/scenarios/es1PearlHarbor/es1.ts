@@ -841,7 +841,7 @@ class ES1BattleCyle extends DefaultBattleCycle {
     GameStatus.print('\t\t\t===================================')
     GameStatus.print('\t\t\t\t=> Set Advantage To Japan')
     GameStatus.print(
-      '-------------------------------------------------------------------------------------------------'
+      '------------------------------------------------------------------------------------------------'
     )
     GameStatus.advantage = Side.Japan
     await GameStatus.pause(2500)
